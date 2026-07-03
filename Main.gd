@@ -363,7 +363,16 @@ var dash_cd_max := DASH_CD
 # ================================================================
 func _ready() -> void:
 	rng.randomize()
-	FONT = ThemeDB.fallback_font
+	# خط عربي+لاتيني مُضمَّن — عشان النصوص تبان على الويب (النظام مفيهوش خطوط)
+	var afont = load("res://assets/Cairo.ttf")
+	if afont != null:
+		FONT = afont
+		ThemeDB.fallback_font = afont            # كل الـLabels تستعمله تلقائياً
+		var th := Theme.new()
+		th.default_font = afont
+		get_window().theme = th
+	else:
+		FONT = ThemeDB.fallback_font
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # بكسلات حادة
 	_gen_sprites()
 	_load_settings()
@@ -844,6 +853,11 @@ func _to_menu() -> void:
 #  INPUT
 func _unhandled_input(ev: InputEvent) -> void:
 	if SHOTMODE:
+		return
+	# نقرة الماوس على شاشة اللغة — بتختار وبتفعّل الكيبورد للمتصفح
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and state == ST_LANG:
+		LANG = 0 if ev.position.y < 420.0 else 1
+		_confirm_lang()
 		return
 	if not (ev is InputEventKey) or not ev.pressed or ev.echo:
 		return
