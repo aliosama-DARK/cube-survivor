@@ -5,6 +5,7 @@ extends Node2D
 #  (يمسح الأعداء ويوقف المؤقت) + داش + أرقام ضرر + موسيقى
 # ============================================================
 
+const DBG_INPUT := false
 const SHOTMODE := false
 const SHOTSCENE := "play"   # "menu" | "settings" | "play" | "boss" | "levelup"
 const SHOTPATH := "C:/Users/madao/AppData/Local/Temp/claude/c--Users-madao-OneDrive-Desktop-darklawh-GAME/4f741e46-2be3-4eba-83bf-07d7c9c8bbcd/scratchpad/shot_shooter.png"
@@ -555,6 +556,7 @@ func _build_hud() -> void:
 
 func _mk_label(pos: Vector2, sz: int, col: Color, parent: Node = null) -> Label:
 	var l := Label.new()
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE   # متبلعش نقرات الماوس (تعدّي للّعبة)
 	l.position = pos
 	l.add_theme_font_size_override("font_size", sz)
 	l.add_theme_color_override("font_color", col)
@@ -568,6 +570,7 @@ func _mk_label(pos: Vector2, sz: int, col: Color, parent: Node = null) -> Label:
 
 func _mk_rect(pos: Vector2, sz: Vector2, col: Color, parent: Node = null) -> ColorRect:
 	var r := ColorRect.new()
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE   # متبلعش نقرات الماوس (تعدّي للّعبة)
 	r.position = pos
 	r.size = sz
 	r.color = col
@@ -883,7 +886,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 				pause_dim.visible = false; state = ST_PLAY; return
 	if not (ev is InputEventKey) or not ev.pressed or ev.echo:
 		return
-	var k: int = ev.keycode
+	# physical_keycode = موضع الزرار (مستقل عن لغة الكيبورد)
+	var k: int = ev.physical_keycode
 	match state:
 		ST_LANG:
 			if k == KEY_E:
@@ -974,19 +978,19 @@ func _step(dt: float) -> void:
 	dash_cd = maxf(0.0, dash_cd - dt)
 	dash_t = maxf(0.0, dash_t - dt)
 
-	# movement + dash
+	# movement + dash — physical = موضع الزرار (يشتغل مع أي لغة كيبورد عربي/إنجليزي)
 	var mv := Vector2.ZERO
-	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP): mv.y -= 1
-	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN): mv.y += 1
-	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT): mv.x -= 1
-	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT): mv.x += 1
+	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): mv.y -= 1
+	if Input.is_physical_key_pressed(KEY_S) or Input.is_physical_key_pressed(KEY_DOWN): mv.y += 1
+	if Input.is_physical_key_pressed(KEY_A) or Input.is_physical_key_pressed(KEY_LEFT): mv.x -= 1
+	if Input.is_physical_key_pressed(KEY_D) or Input.is_physical_key_pressed(KEY_RIGHT): mv.x += 1
 	# يد تحكم: العصا اليسرى + زر A/الكتف للاندفاع
 	var jx := Input.get_joy_axis(0, JOY_AXIS_LEFT_X)
 	var jy := Input.get_joy_axis(0, JOY_AXIS_LEFT_Y)
 	if absf(jx) > 0.25: mv.x += jx
 	if absf(jy) > 0.25: mv.y += jy
 	var pad_dash := Input.is_joy_button_pressed(0, JOY_BUTTON_A) or Input.is_joy_button_pressed(0, JOY_BUTTON_RIGHT_SHOULDER)
-	if (Input.is_key_pressed(KEY_SHIFT) or Input.is_key_pressed(KEY_SPACE) or pad_dash) and dash_cd <= 0.0 and mv != Vector2.ZERO:
+	if (Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_physical_key_pressed(KEY_SPACE) or pad_dash) and dash_cd <= 0.0 and mv != Vector2.ZERO:
 		dash_t = 0.16
 		invuln = maxf(invuln, 0.35)
 		dash_cd = dash_cd_max
@@ -998,6 +1002,8 @@ func _step(dt: float) -> void:
 		mv = Vector2.ZERO   # متجمّد — الحركة مشلولة لحظياً
 	if mv != Vector2.ZERO:
 		pp += mv.normalized() * spd * dt
+		if DBG_INPUT:
+			print("MOVE ", mv, " pp=", pp)
 		trail.append({"pos": pp, "life": 0.35 if dash_t > 0.0 else 0.18})
 		if trail.size() > 48:
 			trail.remove_at(0)
