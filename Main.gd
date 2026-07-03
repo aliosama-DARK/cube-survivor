@@ -403,10 +403,8 @@ func _ready() -> void:
 	_build_lang_ui()
 	_apply_fullscreen()
 	_gen_decor()
-	if lang_chosen or SHOTMODE:
-		_show_only_menu()
-	else:
-		_show_lang_screen()   # أول تشغيل: اختر اللغة
+	LANG = 0   # إنجليزي فقط (اتشال اختيار العربي)
+	_show_only_menu()
 	if not SHOTMODE:
 		_play_music("menu")
 
@@ -664,16 +662,16 @@ func _build_settings_ui() -> void:
 	set_title = _mk_label(Vector2(W * 0.5 - 300, 90), 52, Color(1, 0.9, 0.5), set_dim)
 	set_title.size = Vector2(600, 80)
 	set_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# 5 صفوف: مؤثرات / موسيقى / اهتزاز / ملء الشاشة / اللغة
-	for i in 5:
-		var r := _mk_label(Vector2(W * 0.5 - 300, 180 + i * 82), 30, Color(1, 1, 1), set_dim)
-		r.size = Vector2(600, 44)
+	# 4 صفوف: مؤثرات / موسيقى / اهتزاز / ملء الشاشة
+	for i in 4:
+		var r := _mk_label(Vector2(W * 0.5 - 300, 200 + i * 96), 32, Color(1, 1, 1), set_dim)
+		r.size = Vector2(600, 46)
 		r.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		set_rows.append(r)
 	# شريطا مستوى الصوت تحت أول صفّين
 	for i in 2:
-		var back := _mk_rect(Vector2(W * 0.5 - 150, 216 + i * 82), Vector2(300, 14), Color(0.15, 0.15, 0.20, 0.9), set_dim)
-		var fill := _mk_rect(Vector2(W * 0.5 - 147, 218 + i * 82), Vector2(0, 10), Color(0.45, 0.70, 1.0), set_dim)
+		var back := _mk_rect(Vector2(W * 0.5 - 160, 250 + i * 96), Vector2(320, 18), Color(0.15, 0.15, 0.20, 0.9), set_dim)
+		var fill := _mk_rect(Vector2(W * 0.5 - 157, 253 + i * 96), Vector2(0, 12), Color(0.45, 0.70, 1.0), set_dim)
 		set_bars.append({"back": back, "fill": fill})
 	set_hint = _mk_label(Vector2(W * 0.5 - 400, 620), 24, Color(0.72, 0.72, 0.78), set_dim)
 	set_hint.size = Vector2(800, 40)
@@ -683,16 +681,15 @@ func _build_settings_ui() -> void:
 func _refresh_settings_ui() -> void:
 	set_title.text = T("SETTINGS")
 	set_hint.text = T("W/S select row    •    A/D adjust    •    Backspace back")
-	var names := ["Sound Effects", "Music", "Screen Shake", "Fullscreen", "Language"]
+	var names := ["Sound Effects", "Music", "Screen Shake", "Fullscreen"]
 	var vals := ["%d / 10" % sfx_vol, "%d / 10" % mus_vol,
-		T("ON") if shake_on else T("OFF"), T("ON") if fullscreen_on else T("OFF"),
-		("العربية" if LANG == 1 else "English")]
-	for i in 5:
+		T("ON") if shake_on else T("OFF"), T("ON") if fullscreen_on else T("OFF")]
+	for i in 4:
 		var sel := i == set_sel
 		set_rows[i].text = ("‹  %s : %s  ›" if sel else "%s : %s") % [T(names[i]), vals[i]]
 		set_rows[i].add_theme_color_override("font_color", Color(1, 0.85, 0.35) if sel else Color(1, 1, 1))
-	set_bars[0]["fill"].size.x = 294.0 * float(sfx_vol) / 10.0
-	set_bars[1]["fill"].size.x = 294.0 * float(mus_vol) / 10.0
+	set_bars[0]["fill"].size.x = 314.0 * float(sfx_vol) / 10.0
+	set_bars[1]["fill"].size.x = 314.0 * float(mus_vol) / 10.0
 	set_bars[0]["fill"].color = Color(1, 0.85, 0.35) if set_sel == 0 else Color(0.45, 0.70, 1.0)
 	set_bars[1]["fill"].color = Color(1, 0.85, 0.35) if set_sel == 1 else Color(0.45, 0.70, 1.0)
 
@@ -713,10 +710,6 @@ func _adjust_setting(d: int) -> void:
 			fullscreen_on = not fullscreen_on
 			_apply_fullscreen()
 			sfx("click")
-		4:
-			LANG = 1 - LANG
-			sfx("click")
-			_apply_lang()
 	_save_settings()
 	_refresh_settings_ui()
 
@@ -854,11 +847,40 @@ func _to_menu() -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if SHOTMODE:
 		return
-	# نقرة الماوس على شاشة اللغة — بتختار وبتفعّل الكيبورد للمتصفح
-	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and state == ST_LANG:
-		LANG = 0 if ev.position.y < 420.0 else 1
-		_confirm_lang()
-		return
+	# تحكّم بالماوس (والنقرة كمان بتفعّل الكيبورد في المتصفح)
+	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
+		var mp: Vector2 = ev.position
+		match state:
+			ST_MENU:
+				for i in CHARS.size():
+					var cx := W * 0.5 - 165.0 + 110.0 * i
+					if mp.distance_to(Vector2(cx, 385.0)) < 46.0:
+						char_sel = i; sfx("click"); _refresh_menu(); return
+				if mp.y >= 466.0 and mp.y < 512.0:      # Start Run
+					sfx("click"); _new_run(); return
+				if mp.y >= 512.0 and mp.y < 560.0:      # Settings
+					sfx("click"); set_sel = 0; _refresh_settings_ui()
+					menu_dim.visible = false; set_dim.visible = true; state = ST_SETTINGS; return
+			ST_LEVELUP:
+				var cw := 300.0
+				var gap := 40.0
+				var x0 := W * 0.5 - (cw * 3 + gap * 2) * 0.5
+				for i in 3:
+					var rx := x0 + (cw + gap) * i
+					if mp.x >= rx and mp.x <= rx + cw and mp.y >= 250.0 and mp.y <= 440.0 and i < lv_choices.size():
+						sfx("click"); _apply_upgrade(lv_choices[i]); lv_dim.visible = false; state = ST_PLAY; return
+			ST_SETTINGS:
+				for i in 4:
+					var ry := 200.0 + i * 96.0
+					if mp.y >= ry and mp.y < ry + 60.0:
+						set_sel = i; _adjust_setting(1); return
+				sfx("click"); set_dim.visible = false; menu_dim.visible = true; state = ST_MENU; return
+			ST_OVER:
+				sfx("click"); go_dim.visible = false; _new_run(); return
+			ST_VICTORY:
+				sfx("click"); vic_dim.visible = false; _to_menu(); return
+			ST_PAUSE:
+				pause_dim.visible = false; state = ST_PLAY; return
 	if not (ev is InputEventKey) or not ev.pressed or ev.echo:
 		return
 	var k: int = ev.keycode
@@ -886,9 +908,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 				sfx("click"); vic_dim.visible = false; _to_menu()
 		ST_SETTINGS:
 			if k == KEY_W or k == KEY_UP:
-				set_sel = (set_sel + 4) % 5; sfx("click"); _refresh_settings_ui()
+				set_sel = (set_sel + 3) % 4; sfx("click"); _refresh_settings_ui()
 			elif k == KEY_S or k == KEY_DOWN:
-				set_sel = (set_sel + 1) % 5; sfx("click"); _refresh_settings_ui()
+				set_sel = (set_sel + 1) % 4; sfx("click"); _refresh_settings_ui()
 			elif k == KEY_A or k == KEY_LEFT:
 				_adjust_setting(-1)
 			elif k == KEY_D or k == KEY_RIGHT:
