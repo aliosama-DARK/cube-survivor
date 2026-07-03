@@ -1,0 +1,9 @@
+# Godot editor cache
+.godot/
+
+# Raw export output (the playable copy lives in docs/)
+build/
+
+# OS junk
+Thumbs.db
+.DS_Store
