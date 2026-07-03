@@ -16,8 +16,116 @@ const WH := 1440.0
 var C := Vector2(W * 0.5, H * 0.5)     # مركز الشاشة (للواجهات)
 var WC := Vector2(WW * 0.5, WH * 0.5)  # مركز العالم
 
-enum { ST_MENU, ST_SETTINGS, ST_PLAY, ST_LEVELUP, ST_PAUSE, ST_OVER, ST_VICTORY }
+enum { ST_MENU, ST_SETTINGS, ST_PLAY, ST_LEVELUP, ST_PAUSE, ST_OVER, ST_VICTORY, ST_LANG }
 var state := ST_MENU
+
+# --- i18n ---
+var LANG := 0        # 0 = English, 1 = العربية
+var lang_chosen := false
+func T(s: String) -> String:
+	if LANG == 1 and TR.has(s):
+		return TR[s]
+	return s
+const TR := {
+	# menu
+	"CUBE SURVIVOR": "ناجي المكعبات",
+	"A roguelike run: five stages, a boss every minute, and the Ash King at the end": "جولة روج-لايك: خمسة فصول، زعيم كل دقيقة، وملك الرماد في النهاية",
+	"[Enter]  Start Run": "[Enter]  ابدأ الجولة",
+	"[S] Settings": "[S] الإعدادات",
+	"WASD move  •  Shift/Space dash  •  Auto-fire  •  P pause": "WASD حركة  •  Shift/مسافة اندفاع  •  رماية تلقائية  •  P إيقاف",
+	"Survivor:  < %s >   (A/D)   -   %s": "الناجي:  ‹ %s ›   (A/D)   -   %s",
+	"Best run: Stage %d  •  %02d:%02d  •  %d kills%s": "أفضل جولة: الفصل %d  •  %02d:%02d  •  %d قتيل%s",
+	"  •  Wins: %d": "  •  انتصارات: %d",
+	# settings
+	"SETTINGS": "الإعدادات",
+	"Sound Effects": "المؤثرات الصوتية",
+	"Music": "الموسيقى",
+	"Screen Shake": "اهتزاز الشاشة",
+	"Fullscreen": "ملء الشاشة",
+	"Language": "اللغة",
+	"ON": "مفعّل",
+	"OFF": "مكتوم",
+	"W/S select row    •    A/D adjust    •    Backspace back": "W/S اختيار    •    A/D تعديل    •    Backspace رجوع",
+	# pause / victory / gameover / levelup
+	"PAUSED": "إيقاف مؤقت",
+	"[P] Resume      [M] Main Menu": "[P] استمرار      [M] القائمة",
+	"VICTORY - The Ash King has fallen!": "النصر — سقط ملك الرماد!",
+	"Campaign complete, %s!\n\nKills: %d      Level: %d      Run time: %02d:%02d\nBest combo: x%d\n\n[Enter] Back to Menu": "أنهيت الحملة يا %s!\n\nقتلى: %d      ارتقاء: %d      زمن الجولة: %02d:%02d\nأفضل كومبو: x%d\n\n[Enter] العودة للقائمة",
+	"YOU DIED": "سقطتَ",
+	"Kills: %d      Level: %d      Stage: %d      Survived: %02d:%02d\nBest combo: x%d%s\n\n[R] New Run      [M] Menu": "قتلى: %d      ارتقاء: %d      الفصل: %d      صمدت: %02d:%02d\nأفضل كومبو: x%d%s\n\n[R] جولة جديدة      [M] القائمة",
+	"\nNEW RECORD!": "\nرقم قياسي جديد!",
+	"LEVEL UP %d - choose a blessing [1/2/3]": "ارتقاء %d — اختر بركتك [1/2/3]",
+	# HUD
+	"KILLS: %d": "قتلى: %d",
+	"LEVEL %d": "ارتقاء %d",
+	"Stage %d/%d - %s": "الفصل %d/%d - %s",
+	"!! THE ASH KING - THE END !!": "!! ملك الرماد — النهاية !!",
+	"Lords of the Realms - %d left": "أسياد العوالم — باقي %d",
+	"Something approaches from the dark...": "شيء قادم من الظلام...",
+	"!! %s - TIME FROZEN !!": "!! %s — الزمن متجمّد !!",
+	"Boss in %ds": "الزعيم بعد %dث",
+	"x%d COMBO": "x%d كومبو",
+	# flash messages
+	"Stage 1 - %s": "الفصل 1 — %s",
+	"Stage %d - %s   (+40 HP)": "الفصل %d — %s   (+40 صحة)",
+	"The Void summons the traps of all realms!": "الفراغ يستدعي فخاخ العوالم!",
+	"The Void... something stirs in the dark": "الفراغ... شيء يتحرك في الظلام",
+	"%s is enraged!": "%s استشاط غضباً!",
+	"Frost Heart shattered in two!": "قلب الجليد انكسر لاثنين!",
+	"!! The Lords of the Realms have returned - defeat them all !!": "!! أسياد العوالم عادوا من الرماد — اهزمهم جميعاً !!",
+	"The Ash King rises from his ashes!!": "ملك الرماد ينهض من رماده!!",
+	"A Lord has fallen - %d remain": "سقط أحد الأسياد — باقي %d",
+	"Meteors incoming - run!": "نيازك تسقط — اجري!",
+	"A guarded treasure appeared - check the radar!": "كنز محروس ظهر — شوف الرادار!",
+	"A golden horde passes - hunt it!": "قطيع ذهبي عابر — اصطده!",
+	"Chest! %s": "صندوق! %s",
+	"Treasure! +25 HP and 8 gems": "الكنز! +25 صحة و8 بلورات",
+	"Frozen!": "تجمّدت!",
+	"EVOLVED: Polar Storm!": "تطوّر: عاصفة قطبية!",
+	"EVOLVED: Blade Cyclone!": "تطوّر: إعصار الشفرات!",
+	"EVOLVED: Cluster Bombs!": "تطوّر: قنابل عنقودية!",
+	# survivors
+	"Soldier": "الجندي", "Burner": "المحترق", "Runner": "العدّاء", "Wrecker": "المدمّر",
+	"Balanced — no perks, no flaws": "متوازن — بلا مميزات ولا عيوب",
+	"Starts with a fire aura — but less HP": "يبدأ بهالة حارقة — لكن صحة أقل",
+	"Faster with wider pickup — but less damage": "أسرع وجذب أوسع — لكن ضرر أقل",
+	"Starts with a blade, hits harder — but slower": "يبدأ بشفرة وضرر أعلى — لكن أبطأ",
+	# stages
+	"Meadow": "المرج", "Desert": "الصحراء", "Glacier": "الجليد", "Volcano": "البركان", "The Void": "الفراغ",
+	# bosses
+	"Meadow Warden": "حارس المرج", "Bone King": "ملك العظام", "Frost Heart": "قلب الجليد",
+	"Magma Beast": "وحش الحمم", "Void Shade": "ظل الفراغ", "The Ash King": "ملك الرماد",
+	"Lords of the Realms": "أسياد العوالم",
+	# upgrades
+	"Firepower": "قوة نارية", "+8 projectile damage": "+8 ضرر للمقذوف",
+	"Quick Trigger": "زناد أسرع", "+15% fire rate": "سرعة إطلاق +15%",
+	"Extra Volley": "رشقة إضافية", "+1 projectile per shot": "+1 مقذوف لكل طلقة",
+	"Piercing": "اختراق", "Shots pierce +1 enemy": "المقذوف يخترق عدواً إضافياً",
+	"Orbit Blade": "شفرة دوّارة", "+1 blade spinning around you": "+1 شفرة تدور حولك وتقطع",
+	"Burning Aura": "هالة حارقة", "Damage aura around you (+size)": "هالة ضرر حولك (+ اتساع)",
+	"Deathblow": "ضربة قاضية", "+10% chance of double damage": "+10% فرصة ضرر مضاعف",
+	"Agility": "خفة حركة", "+12% move speed": "سرعة الحركة +12%",
+	"Toughness": "صلابة", "+25 max HP + heal": "+25 صحة قصوى + علاج",
+	"Magnet": "مغناطيس", "+60% gem pickup range": "نطاق جذب البلورات +60%",
+	"Swift Dash": "اندفاع أسرع", "-25% dash cooldown": "زمن انتظار الداش -25%",
+	"Sky Lightning": "صاعقة السماء", "Bolts strike and chain between enemies": "برق يضرب عدواً ويتسلسل لمن حوله",
+	"Explosive Death": "موت متفجر", "Enemies explode on death": "الأعداء ينفجرون عند موتهم",
+	"Ricochet": "ارتداد", "Shots bounce to a nearby enemy": "المقذوف يرتد نحو عدو قريب",
+	"Rear Guard": "حارس الظهر", "+1 shot fired backwards": "+1 طلقة للخلف مع كل رمية",
+	"Regeneration": "تجدد", "+HP every second": "+صحة كل ثانية",
+	"Steel Plates": "صفائح فولاذ", "-10% damage taken": "-10% من كل ضرر يصيبك",
+	"Lifesteal": "امتصاص الأرواح", "Your damage heals you (3%/rank)": "ضررك يشفيك (3% لكل مستوى)",
+	"Frost Touch": "لمسة الصقيع", "Your hits slow enemies": "إصاباتك تبطئ الأعداء",
+	"Massive Shots": "مقذوفات ضخمة", "+25% projectile size": "حجم المقذوف +25%",
+	# evolutions
+	"Polar Storm": "عاصفة قطبية", "Lightning doubles and freezes all it touches": "الصاعقة تتضاعف وتجمّد كل ما تلمسه",
+	"Blade Cyclone": "إعصار الشفرات", "Double blades, faster and deadlier": "ضعف الشفرات وأسرع وأفتك",
+	"Cluster Bombs": "قنابل عنقودية", "Every explosion spawns 3 smaller ones": "كل انفجار يولّد 3 انفجارات صغيرة",
+	# language screen
+	"Choose Language / اختر اللغة": "Choose Language / اختر اللغة",
+	"[E]  English": "[E]  English",
+	"[A]  العربية": "[A]  العربية",
+}
 
 # --- سجلات دائمة ---
 var rec_time := 0.0
@@ -198,6 +306,15 @@ var menu_dim: ColorRect
 var menu_labels: Array = []
 var menu_char: Label
 var menu_rec: Label
+var menu_title: Label
+var menu_sub: Label
+var menu_hint: Label
+var set_title: Label
+var set_hint: Label
+var pause_title: Label
+var pause_opts: Label
+var vic_title: Label
+var lang_dim: ColorRect
 var vic_dim: ColorRect
 var vic_stats: Label
 var lbl_combo: Label
@@ -274,9 +391,13 @@ func _ready() -> void:
 	_build_settings_ui()
 	_build_pause_ui()
 	_build_victory_ui()
+	_build_lang_ui()
 	_apply_fullscreen()
 	_gen_decor()
-	_show_only_menu()
+	if lang_chosen or SHOTMODE:
+		_show_only_menu()
+	else:
+		_show_lang_screen()   # أول تشغيل: اختر اللغة
 	if not SHOTMODE:
 		_play_music("menu")
 
@@ -311,6 +432,8 @@ func _load_settings() -> void:
 		rec_wins = int(cfg.get_value("records", "wins", 0))
 		fullscreen_on = bool(cfg.get_value("video", "fullscreen", false))
 		char_sel = clampi(int(cfg.get_value("progress", "char", 0)), 0, CHARS.size() - 1)
+		LANG = clampi(int(cfg.get_value("lang", "id", 0)), 0, 1)
+		lang_chosen = bool(cfg.get_value("lang", "chosen", false))
 
 func _save_settings() -> void:
 	var cfg := ConfigFile.new()
@@ -323,6 +446,8 @@ func _save_settings() -> void:
 	cfg.set_value("records", "stage", rec_stage)
 	cfg.set_value("records", "wins", rec_wins)
 	cfg.set_value("progress", "char", char_sel)
+	cfg.set_value("lang", "id", LANG)
+	cfg.set_value("lang", "chosen", lang_chosen)
 	cfg.save("user://settings.cfg")
 
 func _update_records(victory: bool) -> void:
@@ -471,7 +596,7 @@ func _build_gameover_ui() -> void:
 	go_title = _mk_label(Vector2(W * 0.5 - 300, 190), 64, Color(0.95, 0.25, 0.25), go_dim)
 	go_title.size = Vector2(600, 90)
 	go_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	go_title.text = "YOU DIED"
+	go_title.text = T("YOU DIED")
 	go_stats = _mk_label(Vector2(W * 0.5 - 350, 310), 30, Color(0.9, 0.9, 0.9), go_dim)
 	go_stats.size = Vector2(700, 240)
 	go_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -479,49 +604,47 @@ func _build_gameover_ui() -> void:
 
 func _build_menu_ui() -> void:
 	menu_dim = _mk_rect(Vector2.ZERO, Vector2(W, H), Color(0, 0, 0, 0.25))
-	var t := _mk_label(Vector2(W * 0.5 - 400, 130), 78, Color(0.45, 0.75, 1.0), menu_dim)
-	t.size = Vector2(800, 110)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	t.text = "CUBE SURVIVOR"
-	var sub := _mk_label(Vector2(W * 0.5 - 400, 240), 24, Color(0.8, 0.8, 0.85), menu_dim)
-	sub.size = Vector2(800, 40)
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.text = "A roguelike run: five stages, a boss every minute, and the Ash King at the end"
+	menu_title = _mk_label(Vector2(W * 0.5 - 400, 130), 78, Color(0.45, 0.75, 1.0), menu_dim)
+	menu_title.size = Vector2(800, 110)
+	menu_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	menu_sub = _mk_label(Vector2(W * 0.5 - 400, 240), 24, Color(0.8, 0.8, 0.85), menu_dim)
+	menu_sub.size = Vector2(800, 40)
+	menu_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	# اختيار البطل (المعاينة بتترسم في _draw عند y≈385)
 	menu_char = _mk_label(Vector2(W * 0.5 - 400, 300), 26, Color(0.95, 0.85, 0.55), menu_dim)
 	menu_char.size = Vector2(800, 40)
 	menu_char.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var opts := ["[Enter]  Start Run", "[S] Settings        [Esc] Quit"]
-	for i in opts.size():
+	for i in 2:
 		var o := _mk_label(Vector2(W * 0.5 - 300, 472 + i * 54), 30 if i == 0 else 24, Color(1, 1, 1) if i == 0 else Color(0.78, 0.78, 0.84), menu_dim)
 		o.size = Vector2(600, 44)
 		o.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		o.text = opts[i]
 		menu_labels.append(o)
-	# الأرقام القياسية + الشظايا
 	menu_rec = _mk_label(Vector2(W * 0.5 - 450, H - 110), 22, Color(0.75, 0.80, 0.90), menu_dim)
 	menu_rec.size = Vector2(900, 34)
 	menu_rec.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var hint := _mk_label(Vector2(W * 0.5 - 400, H - 66), 20, Color(0.7, 0.7, 0.75), menu_dim)
-	hint.size = Vector2(800, 30)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.text = "WASD move  •  Shift/Space dash  •  Auto-fire  •  P pause"
+	menu_hint = _mk_label(Vector2(W * 0.5 - 400, H - 66), 20, Color(0.7, 0.7, 0.75), menu_dim)
+	menu_hint.size = Vector2(800, 30)
+	menu_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_dim.visible = false
 
 func _refresh_menu() -> void:
+	menu_title.text = T("CUBE SURVIVOR")
+	menu_sub.text = T("A roguelike run: five stages, a boss every minute, and the Ash King at the end")
+	menu_labels[0].text = T("[Enter]  Start Run")
+	menu_labels[1].text = T("[S] Settings")
+	menu_hint.text = T("WASD move  •  Shift/Space dash  •  Auto-fire  •  P pause")
 	var ch = CHARS[char_sel]
-	menu_char.text = "Survivor:  < %s >   (A/D)   -   %s" % [ch["name"], ch["desc"]]
+	menu_char.text = T("Survivor:  < %s >   (A/D)   -   %s") % [T(ch["name"]), T(ch["desc"])]
 	var m := int(rec_time) / 60
 	var s := int(rec_time) % 60
-	var wins_txt := "  •  Wins: %d" % rec_wins if rec_wins > 0 else ""
-	menu_rec.text = "Best run: Stage %d  •  %02d:%02d  •  %d kills%s" % [rec_stage, m, s, rec_kills, wins_txt]
+	var wins_txt := T("  •  Wins: %d") % rec_wins if rec_wins > 0 else ""
+	menu_rec.text = T("Best run: Stage %d  •  %02d:%02d  •  %d kills%s") % [rec_stage, m, s, rec_kills, wins_txt]
 
 func _build_victory_ui() -> void:
 	vic_dim = _mk_rect(Vector2.ZERO, Vector2(W, H), Color(0.0, 0.0, 0.0, 0.94))
-	var t := _mk_label(Vector2(W * 0.5 - 400, 170), 62, Color(1.0, 0.85, 0.30), vic_dim)
-	t.size = Vector2(800, 90)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	t.text = "VICTORY - The Ash King has fallen!"
+	vic_title = _mk_label(Vector2(W * 0.5 - 400, 170), 62, Color(1.0, 0.85, 0.30), vic_dim)
+	vic_title.size = Vector2(800, 90)
+	vic_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vic_stats = _mk_label(Vector2(W * 0.5 - 400, 300), 28, Color(0.92, 0.92, 0.92), vic_dim)
 	vic_stats.size = Vector2(800, 240)
 	vic_stats.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -529,37 +652,38 @@ func _build_victory_ui() -> void:
 
 func _build_settings_ui() -> void:
 	set_dim = _mk_rect(Vector2.ZERO, Vector2(W, H), Color(0, 0, 0, 0.72))
-	var t := _mk_label(Vector2(W * 0.5 - 300, 100), 52, Color(1, 0.9, 0.5), set_dim)
-	t.size = Vector2(600, 80)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	t.text = "SETTINGS"
-	# 4 صفوف قابلة للاختيار: مؤثرات / موسيقى / اهتزاز / ملء الشاشة
-	for i in 4:
-		var r := _mk_label(Vector2(W * 0.5 - 300, 200 + i * 96), 32, Color(1, 1, 1), set_dim)
-		r.size = Vector2(600, 46)
+	set_title = _mk_label(Vector2(W * 0.5 - 300, 90), 52, Color(1, 0.9, 0.5), set_dim)
+	set_title.size = Vector2(600, 80)
+	set_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	# 5 صفوف: مؤثرات / موسيقى / اهتزاز / ملء الشاشة / اللغة
+	for i in 5:
+		var r := _mk_label(Vector2(W * 0.5 - 300, 180 + i * 82), 30, Color(1, 1, 1), set_dim)
+		r.size = Vector2(600, 44)
 		r.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		set_rows.append(r)
 	# شريطا مستوى الصوت تحت أول صفّين
 	for i in 2:
-		var back := _mk_rect(Vector2(W * 0.5 - 160, 250 + i * 96), Vector2(320, 18), Color(0.15, 0.15, 0.20, 0.9), set_dim)
-		var fill := _mk_rect(Vector2(W * 0.5 - 157, 253 + i * 96), Vector2(0, 12), Color(0.45, 0.70, 1.0), set_dim)
+		var back := _mk_rect(Vector2(W * 0.5 - 150, 216 + i * 82), Vector2(300, 14), Color(0.15, 0.15, 0.20, 0.9), set_dim)
+		var fill := _mk_rect(Vector2(W * 0.5 - 147, 218 + i * 82), Vector2(0, 10), Color(0.45, 0.70, 1.0), set_dim)
 		set_bars.append({"back": back, "fill": fill})
-	var hint := _mk_label(Vector2(W * 0.5 - 400, 610), 24, Color(0.72, 0.72, 0.78), set_dim)
-	hint.size = Vector2(800, 40)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.text = "W/S select row    •    A/D adjust    •    Esc back"
+	set_hint = _mk_label(Vector2(W * 0.5 - 400, 620), 24, Color(0.72, 0.72, 0.78), set_dim)
+	set_hint.size = Vector2(800, 40)
+	set_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	set_dim.visible = false
 
 func _refresh_settings_ui() -> void:
-	var names := ["Sound Effects", "Music", "Screen Shake", "Fullscreen"]
+	set_title.text = T("SETTINGS")
+	set_hint.text = T("W/S select row    •    A/D adjust    •    Backspace back")
+	var names := ["Sound Effects", "Music", "Screen Shake", "Fullscreen", "Language"]
 	var vals := ["%d / 10" % sfx_vol, "%d / 10" % mus_vol,
-		"ON" if shake_on else "OFF", "ON" if fullscreen_on else "OFF"]
-	for i in 4:
+		T("ON") if shake_on else T("OFF"), T("ON") if fullscreen_on else T("OFF"),
+		("العربية" if LANG == 1 else "English")]
+	for i in 5:
 		var sel := i == set_sel
-		set_rows[i].text = ("‹  %s : %s  ›" if sel else "%s : %s") % [names[i], vals[i]]
+		set_rows[i].text = ("‹  %s : %s  ›" if sel else "%s : %s") % [T(names[i]), vals[i]]
 		set_rows[i].add_theme_color_override("font_color", Color(1, 0.85, 0.35) if sel else Color(1, 1, 1))
-	set_bars[0]["fill"].size.x = 314.0 * float(sfx_vol) / 10.0
-	set_bars[1]["fill"].size.x = 314.0 * float(mus_vol) / 10.0
+	set_bars[0]["fill"].size.x = 294.0 * float(sfx_vol) / 10.0
+	set_bars[1]["fill"].size.x = 294.0 * float(mus_vol) / 10.0
 	set_bars[0]["fill"].color = Color(1, 0.85, 0.35) if set_sel == 0 else Color(0.45, 0.70, 1.0)
 	set_bars[1]["fill"].color = Color(1, 0.85, 0.35) if set_sel == 1 else Color(0.45, 0.70, 1.0)
 
@@ -580,20 +704,48 @@ func _adjust_setting(d: int) -> void:
 			fullscreen_on = not fullscreen_on
 			_apply_fullscreen()
 			sfx("click")
+		4:
+			LANG = 1 - LANG
+			sfx("click")
+			_apply_lang()
 	_save_settings()
 	_refresh_settings_ui()
 
+func _apply_lang() -> void:
+	# يعيد ترجمة كل الشاشات الثابتة بعد تغيير اللغة
+	if menu_title:
+		_refresh_menu()
+	if set_title:
+		_refresh_settings_ui()
+	if pause_title:
+		pause_title.text = T("PAUSED")
+		pause_opts.text = T("[P] Resume      [M] Main Menu")
+
 func _build_pause_ui() -> void:
 	pause_dim = _mk_rect(Vector2.ZERO, Vector2(W, H), Color(0, 0, 0, 0.55))
-	var t := _mk_label(Vector2(W * 0.5 - 300, 250), 56, Color(1, 1, 1), pause_dim)
-	t.size = Vector2(600, 80)
-	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	t.text = "PAUSED"
-	var o := _mk_label(Vector2(W * 0.5 - 300, 360), 30, Color(0.85, 0.85, 0.9), pause_dim)
-	o.size = Vector2(600, 100)
-	o.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	o.text = "[P] Resume      [M] Main Menu"
+	pause_title = _mk_label(Vector2(W * 0.5 - 300, 250), 56, Color(1, 1, 1), pause_dim)
+	pause_title.size = Vector2(600, 80)
+	pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pause_opts = _mk_label(Vector2(W * 0.5 - 300, 360), 30, Color(0.85, 0.85, 0.9), pause_dim)
+	pause_opts.size = Vector2(600, 100)
+	pause_opts.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pause_dim.visible = false
+
+func _build_lang_ui() -> void:
+	lang_dim = _mk_rect(Vector2.ZERO, Vector2(W, H), Color(0.05, 0.035, 0.09, 1.0))
+	var t := _mk_label(Vector2(W * 0.5 - 450, 220), 56, Color(0.55, 0.80, 1.0), lang_dim)
+	t.size = Vector2(900, 80)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	t.text = "Choose Language / اختر اللغة"
+	var e := _mk_label(Vector2(W * 0.5 - 300, 360), 40, Color(1, 1, 1), lang_dim)
+	e.size = Vector2(600, 60)
+	e.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	e.text = "[E]  English"
+	var a := _mk_label(Vector2(W * 0.5 - 300, 440), 40, Color(1, 1, 1), lang_dim)
+	a.size = Vector2(600, 60)
+	a.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	a.text = "[A]  العربية"
+	lang_dim.visible = false
 
 func _show_only_menu() -> void:
 	menu_dim.visible = true
@@ -602,8 +754,25 @@ func _show_only_menu() -> void:
 	go_dim.visible = false
 	pause_dim.visible = false
 	vic_dim.visible = false
+	if lang_dim:
+		lang_dim.visible = false
+	state = ST_MENU
 	_refresh_menu()
 	_hud_visible(false)
+
+func _show_lang_screen() -> void:
+	lang_dim.visible = true
+	menu_dim.visible = false
+	_hud_visible(false)
+	state = ST_LANG
+
+func _confirm_lang() -> void:
+	lang_chosen = true
+	_save_settings()
+	_apply_lang()
+	sfx("click")
+	lang_dim.visible = false
+	_show_only_menu()
 
 func _hud_visible(v: bool) -> void:
 	for n in [lbl_kills, lbl_level, lbl_time, lbl_stage, lbl_boss,
@@ -664,7 +833,7 @@ func _new_run() -> void:
 	_save_settings()   # يحفظ اختيار الناجي
 	_hud_visible(true)
 	state = ST_PLAY
-	_flash_msg("Stage 1 - %s" % THEMES[0]["name"], 1.8)
+	_flash_msg(T("Stage 1 - %s") % T(THEMES[0]["name"]), 1.8)
 
 func _to_menu() -> void:
 	state = ST_MENU
@@ -680,6 +849,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 		return
 	var k: int = ev.keycode
 	match state:
+		ST_LANG:
+			if k == KEY_E:
+				LANG = 0; _confirm_lang()
+			elif k == KEY_A:
+				LANG = 1; _confirm_lang()
 		ST_MENU:
 			if k == KEY_ENTER or k == KEY_KP_ENTER:
 				sfx("click"); _new_run()
@@ -693,16 +867,14 @@ func _unhandled_input(ev: InputEvent) -> void:
 				sfx("click"); set_sel = 0; _refresh_settings_ui()
 				menu_dim.visible = false; set_dim.visible = true
 				state = ST_SETTINGS
-			elif k == KEY_ESCAPE:
-				get_tree().quit()
 		ST_VICTORY:
-			if k == KEY_ENTER or k == KEY_KP_ENTER or k == KEY_M or k == KEY_ESCAPE:
+			if k == KEY_ENTER or k == KEY_KP_ENTER or k == KEY_M:
 				sfx("click"); vic_dim.visible = false; _to_menu()
 		ST_SETTINGS:
 			if k == KEY_W or k == KEY_UP:
-				set_sel = (set_sel + 3) % 4; sfx("click"); _refresh_settings_ui()
+				set_sel = (set_sel + 4) % 5; sfx("click"); _refresh_settings_ui()
 			elif k == KEY_S or k == KEY_DOWN:
-				set_sel = (set_sel + 1) % 4; sfx("click"); _refresh_settings_ui()
+				set_sel = (set_sel + 1) % 5; sfx("click"); _refresh_settings_ui()
 			elif k == KEY_A or k == KEY_LEFT:
 				_adjust_setting(-1)
 			elif k == KEY_D or k == KEY_RIGHT:
@@ -710,7 +882,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			elif k == KEY_ENTER or k == KEY_SPACE:
 				if set_sel >= 2:
 					_adjust_setting(1)
-			elif k == KEY_ESCAPE:
+			elif k == KEY_BACKSPACE:
 				sfx("click"); set_dim.visible = false
 				menu_dim.visible = true; state = ST_MENU
 		ST_LEVELUP:
@@ -726,15 +898,15 @@ func _unhandled_input(ev: InputEvent) -> void:
 		ST_OVER:
 			if k == KEY_R or k == KEY_ENTER:
 				sfx("click"); go_dim.visible = false; _new_run()
-			elif k == KEY_M or k == KEY_ESCAPE:
+			elif k == KEY_M:
 				sfx("click"); go_dim.visible = false; _to_menu()
 		ST_PAUSE:
-			if k == KEY_ESCAPE or k == KEY_P:
+			if k == KEY_P or k == KEY_BACKSPACE:
 				pause_dim.visible = false; state = ST_PLAY
 			elif k == KEY_M:
 				sfx("click"); pause_dim.visible = false; _to_menu()
 		ST_PLAY:
-			if k == KEY_ESCAPE or k == KEY_P:
+			if k == KEY_P or k == KEY_BACKSPACE:
 				pause_dim.visible = true; state = ST_PAUSE
 
 func _process(dt: float) -> void:
@@ -881,7 +1053,7 @@ func _step(dt: float) -> void:
 					for k in 3:
 						meteors.append({"pos": pp + Vector2(rng.randf_range(-300, 300), rng.randf_range(-220, 220)), "t": 1.0 + float(k) * 0.35})
 					sfx("boss", -6.0)
-					_flash_msg("The Void summons the traps of all realms!", 1.5)
+					_flash_msg(T("The Void summons the traps of all realms!"), 1.5)
 					trap_t = rng.randf_range(5.5, 8.0)
 	_trap_step(dt)
 	if freeze_t > 0.0:
@@ -1028,7 +1200,7 @@ func _spawn_boss() -> void:
 	sfx("boss", 2.0)
 	shake = 8.0 if kind != 5 else 12.0
 	_play_music("b%d" % ti)
-	_flash_msg("!! %s !!" % bname, 2.2 if kind != 5 else 3.0)
+	_flash_msg("!! %s !!" % T(bname), 2.2 if kind != 5 else 3.0)
 
 func _boss_die(epos: Vector2) -> void:
 	boss_alive = false
@@ -1052,7 +1224,8 @@ func _boss_die(epos: Vector2) -> void:
 		_update_records(true)
 		var m := int(gametime) / 60
 		var s := int(gametime) % 60
-		vic_stats.text = "Campaign complete, %s!\n\nKills: %d      Level: %d      Run time: %02d:%02d\nBest combo: x%d\n\n[Enter] Back to Menu" % [CHARS[char_sel]["name"], kills, level, m, s, combo_best]
+		vic_title.text = T("VICTORY - The Ash King has fallen!")
+		vic_stats.text = T("Campaign complete, %s!\n\nKills: %d      Level: %d      Run time: %02d:%02d\nBest combo: x%d\n\n[Enter] Back to Menu") % [T(CHARS[char_sel]["name"]), kills, level, m, s, combo_best]
 		vic_dim.visible = true
 		_play_music("menu")
 		return
@@ -1063,9 +1236,9 @@ func _boss_die(epos: Vector2) -> void:
 		# الفراغ: بلا وقت — أسياد العوالم قادمون
 		stage_timer = 999999.0
 		void_intro = 4.5
-		_flash_msg("The Void... something stirs in the dark", 3.0)
+		_flash_msg(T("The Void... something stirs in the dark"), 3.0)
 	else:
-		_flash_msg("Stage %d - %s   (+40 HP)" % [stage, th["name"]], 2.4)
+		_flash_msg(T("Stage %d - %s   (+40 HP)") % [stage, T(th["name"])], 2.4)
 
 func _boss_step(e: Dictionary, dt: float) -> void:
 	var kind: int = e["kind"]
@@ -1078,7 +1251,7 @@ func _boss_step(e: Dictionary, dt: float) -> void:
 		shake = 7.0
 		sfx("boss", 0.0)
 		_burst(bp, e["col"], 26)
-		_flash_msg("%s is enraged!" % boss_name_cur, 1.8)
+		_flash_msg(T("%s is enraged!") % T(boss_name_cur), 1.8)
 	var enraged := int(e["phase"]) == 2
 	e["atk"] = float(e["atk"]) - dt
 	e["atk2"] = float(e["atk2"]) - dt
@@ -1130,7 +1303,7 @@ func _boss_step(e: Dictionary, dt: float) -> void:
 		shake = 9.0
 		sfx("bossdie", -4.0, 1.3, 1.3)
 		_burst(bp, e["col"], 30)
-		_flash_msg("Frost Heart shattered in two!", 1.8)
+		_flash_msg(T("Frost Heart shattered in two!"), 1.8)
 	# حركة (الملك بيندفع برضه في طور الحمم وبعد البعث)
 	if kind == 3 or kind == 5:
 		e["charge"] = maxf(0.0, float(e["charge"]) - dt)
@@ -1325,7 +1498,7 @@ func _spawn_void_gauntlet() -> void:
 	boss_name_cur = "Lords of the Realms"
 	shake = 11.0
 	_play_music("b4")
-	_flash_msg("!! The Lords of the Realms have returned - defeat them all !!", 3.2)
+	_flash_msg(T("!! The Lords of the Realms have returned - defeat them all !!"), 3.2)
 
 # ================================================================
 #  ENEMIES
@@ -1421,7 +1594,7 @@ func _kill_enemy(idx: int) -> void:
 		wipe_t = 0.9
 		sfx("boss", 3.0, 0.8, 0.8)
 		_burst(Vector2(e["pos"]), Color(1.0, 0.85, 0.3), 46)
-		_flash_msg("The Ash King rises from his ashes!!", 2.8)
+		_flash_msg(T("The Ash King rises from his ashes!!"), 2.8)
 		return
 	kills += 1
 	combo += 1
@@ -1488,7 +1661,7 @@ func _kill_enemy(idx: int) -> void:
 				hp = minf(maxhp, hp + 15.0)
 				shake = 8.0
 				if stage == FINAL_STAGE and not king_spawned:
-					_flash_msg("A Lord has fallen - %d remain" % bosses_left, 1.6)
+					_flash_msg(T("A Lord has fallen - %d remain") % bosses_left, 1.6)
 			elif stage == FINAL_STAGE and not king_spawned:
 				# سقط الأسياد الأربعة — الملك بنفسه ينزل
 				king_spawned = true
@@ -1683,7 +1856,7 @@ func _fire_event() -> void:
 				mpos.y = clampf(mpos.y, 60, WH - 60)
 				meteors.append({"pos": mpos, "t": 1.0 + float(i) * 0.35})
 			sfx("boss", -4.0)
-			_flash_msg("Meteors incoming - run!", 2.0)
+			_flash_msg(T("Meteors incoming - run!"), 2.0)
 		1:  # كنز محروس
 			var coff := Vector2(rng.randf_range(-420, 420), rng.randf_range(-280, 280))
 			var cpos := pp + coff
@@ -1699,7 +1872,7 @@ func _fire_event() -> void:
 					"r": 25.0, "hp": ghp, "maxhp": ghp, "spd": 44.0,
 					"type": "elite", "orbcd": 0.0, "atk": 2.5, "mod": "", "guard": true,
 				})
-			_flash_msg("A guarded treasure appeared - check the radar!", 2.2)
+			_flash_msg(T("A guarded treasure appeared - check the radar!"), 2.2)
 		_:  # قطيع ذهبي
 			for i in 10:
 				enemies.append({
@@ -1710,7 +1883,7 @@ func _fire_event() -> void:
 					"type": "fast", "orbcd": 0.0, "gold": true,
 				})
 			sfx("gem", -4.0, 0.8, 0.8)
-			_flash_msg("A golden horde passes - hunt it!", 2.0)
+			_flash_msg(T("A golden horde passes - hunt it!"), 2.0)
 
 func _meteor_step(dt: float) -> void:
 	var i := meteors.size() - 1
@@ -1739,7 +1912,7 @@ func _box_step() -> void:
 			sfx("levelup", 0.0, 1.15, 1.15)
 			_burst(Vector2(bx["pos"]), Color(1.0, 0.85, 0.3), 18)
 			hitstop = maxf(hitstop, 0.10)
-			_flash_msg("Chest! %s" % bl["name"], 1.6)
+			_flash_msg(T("Chest! %s") % T(bl["name"]), 1.6)
 			boxes.remove_at(i)
 		i -= 1
 
@@ -1760,7 +1933,7 @@ func _chest_step() -> void:
 		hp = minf(maxhp, hp + 25.0)
 		sfx("levelup", 0.0, 1.1, 1.1)
 		_burst(cpos, Color(1.0, 0.85, 0.3), 24)
-		_flash_msg("Treasure! +25 HP and 8 gems", 1.8)
+		_flash_msg(T("Treasure! +25 HP and 8 gems"), 1.8)
 		chest = null
 
 func _trap_step(dt: float) -> void:
@@ -1790,7 +1963,7 @@ func _trap_step(dt: float) -> void:
 					freeze_t = 0.8
 					_hurt(8.0 * _dmg_mul())
 					flash = minf(1.0, flash + 0.4)
-					_flash_msg("Frozen!", 0.7)
+					_flash_msg(T("Frozen!"), 0.7)
 					sfx("hurt", -4.0, 1.3, 1.4)
 				_burst(Vector2(tp["pos"]), Color(0.8, 0.95, 1.0), 14)
 				dead = true
@@ -1888,17 +2061,17 @@ func _enter_levelup() -> void:
 		if i == 0 and evo_pending != "":
 			var ev = EVOS[evo_pending]
 			lv_choices.append(evo_pending)
-			card["name"].text = "★ " + ev["name"]
-			card["desc"].text = ev["desc"]
+			card["name"].text = "★ " + T(ev["name"])
+			card["desc"].text = T(ev["desc"])
 			card["panel"].color = Color(0.30, 0.24, 0.06, 0.97)
 			card["name"].add_theme_color_override("font_color", Color(1.0, 0.85, 0.30))
 			continue
 		lv_choices.append(pool[i]["id"])
-		card["name"].text = pool[i]["name"]
-		card["desc"].text = pool[i]["desc"]
+		card["name"].text = T(pool[i]["name"])
+		card["desc"].text = T(pool[i]["desc"])
 		card["panel"].color = Color(0.10, 0.12, 0.18, 0.95)
 		card["name"].add_theme_color_override("font_color", Color(1, 1, 1))
-	lv_title.text = "LEVEL UP %d - choose a blessing [1/2/3]" % level
+	lv_title.text = T("LEVEL UP %d - choose a blessing [1/2/3]") % level
 	lv_dim.visible = true
 	state = ST_LEVELUP
 
@@ -1908,20 +2081,20 @@ func _apply_upgrade(id: String) -> void:
 		"estorm":
 			evo_storm = true
 			evo_pending = ""
-			_flash_msg("EVOLVED: Polar Storm!", 2.2)
+			_flash_msg(T("EVOLVED: Polar Storm!"), 2.2)
 			sfx("levelup", 2.0, 0.8, 0.8)
 			return
 		"ecyclone":
 			evo_cyclone = true
 			orbit_n *= 2
 			evo_pending = ""
-			_flash_msg("EVOLVED: Blade Cyclone!", 2.2)
+			_flash_msg(T("EVOLVED: Blade Cyclone!"), 2.2)
 			sfx("levelup", 2.0, 0.8, 0.8)
 			return
 		"ecluster":
 			evo_cluster = true
 			evo_pending = ""
-			_flash_msg("EVOLVED: Cluster Bombs!", 2.2)
+			_flash_msg(T("EVOLVED: Cluster Bombs!"), 2.2)
 			sfx("levelup", 2.0, 0.8, 0.8)
 			return
 	ups_count[id] = int(ups_count.get(id, 0)) + 1
@@ -2027,8 +2200,9 @@ func _game_over() -> void:
 	var s := int(gametime) % 60
 	var rec_txt := ""
 	if kills > was_rec_k or gametime > was_rec_t:
-		rec_txt = "\nNEW RECORD!"
-	go_stats.text = "Kills: %d      Level: %d      Stage: %d      Survived: %02d:%02d\nBest combo: x%d%s\n\n[R] New Run      [M] Menu" % [kills, level, stage, m, s, combo_best, rec_txt]
+		rec_txt = T("\nNEW RECORD!")
+	go_title.text = T("YOU DIED")
+	go_stats.text = T("Kills: %d      Level: %d      Stage: %d      Survived: %02d:%02d\nBest combo: x%d%s\n\n[R] New Run      [M] Menu") % [kills, level, stage, m, s, combo_best, rec_txt]
 	go_dim.visible = true
 
 # ================================================================
@@ -2282,30 +2456,30 @@ func _crack_pts(start: Vector2, segs: int) -> PackedVector2Array:
 # ================================================================
 #  HUD
 func _update_hud() -> void:
-	lbl_kills.text = "KILLS: %d" % kills
-	lbl_level.text = "LEVEL %d" % level
+	lbl_kills.text = T("KILLS: %d") % kills
+	lbl_level.text = T("LEVEL %d") % level
 	var m := int(gametime) / 60
 	var s := int(gametime) % 60
 	lbl_time.text = "%02d:%02d" % [m, s]
-	lbl_stage.text = "Stage %d/%d - %s" % [mini(stage, FINAL_STAGE), FINAL_STAGE, THEMES[theme_idx()]["name"]]
+	lbl_stage.text = T("Stage %d/%d - %s") % [mini(stage, FINAL_STAGE), FINAL_STAGE, T(THEMES[theme_idx()]["name"])]
 	if stage == FINAL_STAGE:
 		if king_spawned:
-			lbl_boss.text = "!! THE ASH KING - THE END !!"
+			lbl_boss.text = T("!! THE ASH KING - THE END !!")
 		elif boss_alive:
 			var gleft := 0
 			for e4 in enemies:
 				if String(e4["type"]) == "boss":
 					gleft += 1
-			lbl_boss.text = "Lords of the Realms - %d left" % gleft
+			lbl_boss.text = T("Lords of the Realms - %d left") % gleft
 		else:
-			lbl_boss.text = "Something approaches from the dark..."
+			lbl_boss.text = T("Something approaches from the dark...")
 	elif boss_alive:
-		lbl_boss.text = "!! %s - TIME FROZEN !!" % boss_name_cur
+		lbl_boss.text = T("!! %s - TIME FROZEN !!") % T(boss_name_cur)
 	else:
-		lbl_boss.text = "Boss in %ds" % int(ceil(stage_timer))
+		lbl_boss.text = T("Boss in %ds") % int(ceil(stage_timer))
 	if combo >= 5:
 		lbl_combo.visible = true
-		lbl_combo.text = "x%d COMBO" % combo
+		lbl_combo.text = T("x%d COMBO") % combo
 		lbl_combo.add_theme_color_override("font_color",
 			Color(1, 0.85, 0.35) if combo < 25 else (Color(1, 0.55, 0.15) if combo < 60 else Color(1, 0.25, 0.25)))
 	else:
@@ -2875,9 +3049,17 @@ func _draw_boss(e: Dictionary) -> void:
 func _simulate_for_shot() -> void:
 	_hud_visible(true)
 	menu_dim.visible = false
-	if SHOTSCENE == "menu":
+	if SHOTSCENE == "lang":
+		state = ST_LANG
+		_hud_visible(false)
+		lang_dim.visible = true
+		queue_redraw()
+		return
+	if SHOTSCENE == "menu" or SHOTSCENE == "menu_ar":
 		state = ST_MENU
 		_hud_visible(false)
+		if SHOTSCENE == "menu_ar":
+			LANG = 1
 		rec_stage = 4; rec_kills = 1240; rec_time = 543.0; rec_wins = 2
 		_refresh_menu()
 		menu_dim.visible = true
