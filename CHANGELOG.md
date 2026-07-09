@@ -1,5 +1,43 @@
 # Cube Survivor — Changelog
 
+## v1.2.3 (2026-07) — Pyromancer & Shinobi Ultimate Rework
+- **Fire Aura is now the Pyromancer (Fire Mage)** — the awkward "stand-in-danger
+  aura" is gone. Save migration keeps the unlock (old `Fire Aura`/`Burner` saves
+  become `Pyromancer`).
+- **Fire Bolt (signature)** — mid-range fire bolts, less accurate than the
+  Soldier, medium damage, each hit stacks Burn. **Every 3rd successful hit
+  erupts in a small explosion** (the loaded 3rd shot is bigger/brighter with a
+  hotter sound — a clear 1…2…BOOM rhythm). Explosions deal reduced damage vs
+  bosses so fights don't break.
+- **Burn system** — a DoT that stacks up to 5 (each stack adds damage), lasts
+  ~2.6s, is 50% weaker on bosses, and emits a small flare pulse at max stacks.
+  Burn alone doesn't kill everything — the identity is Fire Bolt + 3rd-hit
+  explosion + Fireball.
+- **Fireball (Q, 14s)** — hurls a big fireball that explodes on impact/range
+  end for heavy area damage, applies Burn stacks, and leaves short burning
+  ground (~3.5s). Reduced vs bosses, no screen-wipe, no healing.
+- **Shinobi is now the Shadow Slayer** — no longer dependent on ramming enemies
+  with dashes. Primary weapon is **Crescent Slash**: fast arc slashes at
+  close-mid range that cleave several foes in a ~124° arc, auto-aimed at the
+  nearest enemy.
+- **Dash reworked** — still 3 charges with i-frames and dash damage (kills
+  refund a quarter charge), but it's a mobility/dodge tool now, not the whole
+  kit. Dash damage is halved vs bosses, and ending a dash inside an enemy nudges
+  you back out (no more sticking).
+- **Shadow Assault (Q, 18s)** — vanish and cut 3-5 nearby foes in a blur with
+  i-frames, then reappear. Reduced per-hit vs bosses.
+- **Judgement Rift (R — Ultimate)** — Shinobi-only. **Unlocks at Level 7**
+  (HUD shows `R Locked (Lv7)` before then), fixed **60s cooldown**. Brief
+  hitstop, then multi-hit slashes detonate across a wide area (3 hits each; a
+  single reduced hit vs bosses). Invulnerable only during the cast. Strong and
+  flashy but not a win button — no healing, no cooldown resets, no boss melt.
+  **R** only acts during gameplay, so it never conflicts with the level-up
+  reroll (also R, but only on the level-up screen).
+- **Knight swords** now render as actual blades (bigger, sword-shaped); Berserk
+  makes them grow and glow gold. No damage changes.
+- Character-select panels updated for both (with a 7th line for Shinobi's
+  ultimate) — no overflow.
+
 ## v1.2.1 (2026-07) — Progression, Upgrade Clarity & Character Select Polish
 - **Clear level caps** — passives now cap at 3 levels (with stronger per-level
   values: +10 damage, +15% fire rate, +30 HP, +10% crit, +12% speed), side

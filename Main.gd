@@ -6,7 +6,7 @@ extends Node2D
 # ============================================================
 
 const DBG_INPUT := false
-const GAME_VERSION := "v1.2.1"
+const GAME_VERSION := "v1.2.3"
 # لقطات الشاشة للتطوير: تُفعَّل عبر سطر الأوامر:  godot --path . -- --shot=<scene> [--shotout=<path>]
 # المشاهد: menu | menu_ar | settings | play | boss | levelup | lang | cover
 var SHOTMODE := false
@@ -245,8 +245,22 @@ const TR := {
 	"EVOLVED: Cluster Bombs!": "تطوّر: قنابل عنقودية!",
 	# survivors
 	# v1.2: الشخصيات الجديدة
-	"Soldier": "الجندي", "Fire Aura": "هالة النار", "Shinobi": "الشينوبي",
+	"Soldier": "الجندي", "Fire Aura": "هالة النار", "Pyromancer": "الساحر الناري", "Shinobi": "الشينوبي",
 	"Knight": "الفارس", "Titan": "العملاق", "Gambler": "المقامر",
+	"Fire Mage": "ساحر نار", "Shadow Slayer": "قاتل الظل",
+	# v1.2.3: Pyromancer + Shadow Slayer
+	"A fire caster who burns groups with bolts, blasts, and explosive rhythm": "ساحر نار بيحرق المجموعات بالكرات والانفجارات وإيقاع متفجّر",
+	"A fragile assassin who carves foes with fast crescent slashes and dashes": "قاتل هش بينحت الأعداء بسلاشات قوسية سريعة وداشات",
+	"Fire Bolts stack Burn - every 3rd hit erupts in a small explosion": "كرات النار بتراكم الحرق - كل ضربة تالتة بتفجّر انفجار صغير",
+	"Crescent slashes at close-mid range - 3 dash charges (kills refund). Ultimate unlocks at Lv 7": "سلاشات قوسية مدى قريب-متوسط - 3 شحنات داش (القتل بيردّها). الأولتيمت بتفتح عند Lv 7",
+	"Fire Bolt": "كرة النار", "Mid-range fire bolts - every 3 hits explode": "كرات نار متوسطة المدى - كل 3 إصابات بتنفجر",
+	"Crescent Slash": "السلاش الهلالي", "Fast arc slashes at close-mid range (cleave)": "سلاشات قوسية سريعة مدى قريب-متوسط (تقطع مجموعة)",
+	"Fireball": "كرة اللهب", "Hurl a heavy fireball: big blast, burning ground, and Burn stacks": "ارمِ كرة نار تقيلة: انفجار كبير وأرض مشتعلة وطبقات حرق",
+	"Shadow Assault": "الاجتياح الظلّي", "Vanish and cut 3-5 nearby foes in a blur, then reappear (i-frames)": "اختفِ واقطع 3-5 أعداء قريبين في ومضة ثم ارجع (حصانة)",
+	"Judgement Rift": "صدع الحساب", "Freeze time briefly, then unleash multi-hit slashes across a wide area": "جمّد الوقت لحظة ثم أطلق سلاشات متعددة على مساحة واسعة",
+	"Mid-range / AoE / Burn": "مدى متوسط / منطقة / حرق", "Great against small groups": "قوي ضد المجموعات الصغيرة", "Less accurate and fragile up close": "أقل دقة وهش من قريب",
+	"Melee / Hit-and-run": "التحام / اضرب واهرب", "Shreds packs with slashes and dashes": "بيمزّق الحشود بالسلاش والداش", "Fragile - punished when cornered": "هش - بيتعاقب لو اتحاصر",
+	"R Locked": "R مقفولة", "Unlocks at Lv 7": "بتفتح عند Lv 7", "JUDGEMENT RIFT!": "!صدع الحساب", "Shadow Assault!": "!اجتياح ظلّي",
 	"Tactician": "تكتيكي", "Burning Core": "قلب محترق", "Shadow": "ظل",
 	"Blade Wall": "جدار السيوف", "Fortress": "الحصن", "High Roller": "مقامر كبير",
 	"A tactical survivor who wins by positioning, turrets, and controlled fire": "ناجٍ تكتيكي بيكسب بالتمركز والتورريت والرماية المحسوبة",
@@ -807,6 +821,17 @@ var roll_anim_t := 0.0     # عرض نتيجة النرد فوق اللاعب
 var roll_result := 0
 var lbl_q: Label           # مؤشر جاهزية Q في الـ HUD
 var kill_src := ""         # مصدر الضربة القاتلة (لمكافأة قتل الداش عند الشينوبي)
+# --- v1.2.3: Pyromancer (Fire Bolt) + Shinobi (Crescent Slash + Shadow Assault + Judgement Rift R) ---
+var fbolt_hits := 0        # عدّاد إصابات كرة النار — كل 3 = انفجار
+var fireballs := []        # كرات Fireball الطايرة (قدرة Pyromancer) {pos, vel, life, r}
+var slash_cd := 0.0        # إيقاع Crescent Slash
+var slash_fx := []         # مؤثرات القوس البصرية {pos, ang, arc, reach, life, max, col}
+var sassault = null         # Shadow Assault الجاري {t, hits, dmg, targets}
+var r_cd := 0.0            # تبريد الأولتيمت (Judgement Rift)
+var r_cd_max := 60.0
+var r_active_t := 0.0      # نافذة الحصانة أثناء تنفيذ R
+var rift = null             # Judgement Rift الجاري {t, r, dmg, marks}
+var lbl_r: Label           # مؤشر الأولتيمت R في الـ HUD (الشينوبي فقط)
 # --- v1.2 B/C: أسلحة جانبية + تطوّرات ---
 var kunai_cd := 0.0        # إيقاع الكوناي
 var forb_ang := 0.0        # زاوية دوران Frost Orb
@@ -1355,7 +1380,11 @@ func _build_hud() -> void:
 	# v1.2: مؤشر جاهزية القدرة Q جنب شريط الداش
 	lbl_q = _mk_label(Vector2(152, 84), 16, Color(0.6, 0.95, 0.7))
 	lbl_q.size = Vector2(150, 22)
-	lbl_combo = _mk_label(Vector2(24, 106), 26, Color(1, 0.85, 0.35))
+	# v1.2.3: مؤشر الأولتيمت R (الشينوبي فقط)
+	lbl_r = _mk_label(Vector2(152, 104), 16, Color(0.75, 0.85, 1.0))
+	lbl_r.size = Vector2(180, 22)
+	lbl_r.visible = false
+	lbl_combo = _mk_label(Vector2(24, 128), 26, Color(1, 0.85, 0.35))
 	lbl_combo.visible = false
 	# مؤشر WOUNDED جنب شريط الصحة — عشان اللاعب ما يفتكرش إن العلاج باظ
 	lbl_wound = _mk_label(Vector2(270, 62), 18, Color(1.0, 0.55, 0.15))
@@ -1587,9 +1616,9 @@ func _build_charsel_ui() -> void:
 		var sl := _mk_label(Vector2(710, 274 + i * 30), 18, Color(0.85, 0.88, 0.95), cs_dim)
 		sl.size = Vector2(150, 26)
 		cs_stat_labels.append(sl)
-	# بلوك معلومات: 6 سطور مستقلة بمواضع ثابتة (مقاس خط Cairo الطويل ما يكسرش التخطيط)
-	for i in 6:
-		var il := _mk_label(Vector2(710, 432 + i * 29), 16, Color(0.70, 0.90, 1.0), cs_dim)
+	# بلوك معلومات: 7 سطور مستقلة بمواضع ثابتة (السطر السابع للأولتيمت R لو موجود)
+	for i in 7:
+		var il := _mk_label(Vector2(710, 428 + i * 28), 16, Color(0.70, 0.90, 1.0), cs_dim)
 		il.size = Vector2(485, 26)
 		il.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		cs_info.append(il)
@@ -1613,6 +1642,9 @@ func _refresh_charsel() -> void:
 		T("Strength") + ": " + T(ch.get("strength", "")),
 		T("Weakness") + ": " + T(ch.get("weak", "")),
 	]
+	# v1.2.3: سطر الأولتيمت R للشخصيات اللي عندها rname (الشينوبي)
+	if ch.has("rname"):
+		lines.insert(2, "R: " + T(String(ch.get("rname", ""))) + " (Lv%d, %ds)" % [int(ch.get("runlock", 7)), int(ch.get("rcd", 60))])
 	for i in cs_info.size():
 		cs_info[i].text = String(lines[i]) if i < lines.size() else ""
 	if unlocked_c:
@@ -2018,7 +2050,7 @@ func _confirm_lang() -> void:
 
 func _hud_visible(v: bool) -> void:
 	for n in [lbl_kills, lbl_level, lbl_time, lbl_stage, lbl_boss,
-			hp_back, hp_fill, lbl_hp, lbl_q, xp_back, xp_fill, dash_back, dash_fill]:
+			hp_back, hp_fill, lbl_hp, lbl_q, lbl_r, xp_back, xp_fill, dash_back, dash_fill]:
 		n.visible = v
 	for p in hud_panels:
 		p.visible = v
@@ -2210,19 +2242,21 @@ func _new_run() -> void:
 			bullet_dmg *= 1.3
 			fire_rate *= 1.45
 			pierce += 1
-		1:  # Fire Aura (fireaura): هالة نار + Burn stacks — الوحيد اللي العلاج معاه قوي
-			aura_r = 100.0
-			maxhp *= 0.95
-			heal_mul = 1.35
-			char_steal_bonus = true
-		2:  # Shinobi (dashblade): الداش هو السلاح — 3 شحنات + i-frames قصيرة، هش جداً
-			pspeed *= 1.25
-			dash_cd_max *= 0.75
+		1:  # Pyromancer (firebolt): ساحر نار — كرات مدى متوسط + انفجار كل 3 إصابات + Fireball Q
+			bullet_dmg *= 1.02   # ضرر متوسط (أقل من الجندي)
+			fire_rate *= 1.12    # إيقاع متوسط (أبطأ شوية من الأساس)
+			maxhp *= 0.95        # هش شوية من قريب
+		2:  # Shinobi (crescent): سلاش قوسي مدى قريب-متوسط + داش (3 شحنات) + R Ultimate
+			pspeed *= 1.22
+			dash_cd_max *= 0.78
 			dash_charges_max = 3
 			dash_charges = 3
 			magnet *= 1.3
-			maxhp *= 0.8
-			heal_mul = 0.75
+			maxhp *= 0.82
+			heal_mul = 0.8
+			bullet_dmg *= 1.18   # أساس ضرر السلاش (السلاح الأساسي بقى السلاش مش الداش)
+			fire_rate *= 0.7     # إيقاع سلاش سريع
+			crit = maxf(crit, 0.10)
 			rerolls += 1
 			speed_cap = 620.0
 		3:  # Knight (spinblade): سيفان دوّاران — المدى القريب هو درعه
@@ -2267,6 +2301,11 @@ func _new_run() -> void:
 	# تصفير v1.2 B/C (أسلحة جانبية + تطوّرات)
 	kunai_cd = 0.0; forb_ang = 0.0; bomb_cd = 0.0; fmeteor_cd = 0.0
 	bombs.clear(); fmeteors.clear(); orbit_radius = 72.0
+	# تصفير v1.2.3 (Pyromancer + Shinobi rework)
+	fbolt_hits = 0; fireballs.clear(); slash_cd = 0.0; slash_fx.clear()
+	sassault = null; rift = null; r_active_t = 0.0
+	r_cd_max = float(CHARS[char_sel].get("rcd", 60.0))
+	r_cd = r_cd_max   # الأولتيمت مش جاهز بداية الجولة
 	evo_bladestorm = false; evo_ewinter = false; evo_meteor = false
 	evo_tstorm = false; evo_thalo = false; evo_soulp = false
 	# كومبو / تطوّرات / أحداث
@@ -2695,15 +2734,20 @@ func _step(dt: float) -> void:
 	var want_dash := (AUTOPLAY and bot_dash) or (not AUTOPLAY and (Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_physical_key_pressed(KEY_SPACE) or pad_dash))
 	# v1.2: قدرة Q (كيبورد Q / زر X في اليد) — البوت بيستخدمها لما تجهز والساحة زحمة
 	var want_q := (AUTOPLAY and enemies.size() > 5) if AUTOPLAY else (Input.is_physical_key_pressed(KEY_Q) or Input.is_joy_button_pressed(0, JOY_BUTTON_X))
-	if want_q and q_cd <= 0.0 and state == ST_PLAY:
+	if want_q and q_cd <= 0.0 and state == ST_PLAY and sassault == null:
 		_use_q()
+	# v1.2.3: أولتيمت R (الشينوبي فقط، بيفتح عند Level 7) — R في اللعب لا يتعارض مع reroll (اللي في شاشة الارتقاء)
+	if sig == "crescent" and level >= int(CHARS[char_sel].get("runlock", 7)) and r_cd <= 0.0 and rift == null and state == ST_PLAY:
+		var want_r := (AUTOPLAY and enemies.size() > 6) if AUTOPLAY else (Input.is_physical_key_pressed(KEY_R) or Input.is_joy_button_pressed(0, JOY_BUTTON_Y))
+		if want_r:
+			_judgement_rift()
 	# Shinobi: 3 شحنات داش (الداش نفسه السلاح) — الباقي بشحنة/تبريد كالمعتاد
-	var can_dash := (dash_charges > 0 and dash_cd <= 0.0) if sig == "dashblade" else dash_cd <= 0.0
+	var can_dash := (dash_charges > 0 and dash_cd <= 0.0) if sig == "crescent" else dash_cd <= 0.0
 	if want_dash and can_dash and mv != Vector2.ZERO:
 		dash_t = 0.16
 		invuln = maxf(invuln, 0.35)
 		dash_id += 1
-		if sig == "dashblade":
+		if sig == "crescent":
 			dash_charges -= 1
 			dash_cd = 0.22   # فاصل قصير بين الشحنات
 			if dash_recharge_t <= 0.0:
@@ -2787,20 +2831,44 @@ func _step(dt: float) -> void:
 	g_rate_t = maxf(0.0, g_rate_t - dt)
 	roll_anim_t = maxf(0.0, roll_anim_t - dt)
 	berserk_t = maxf(0.0, berserk_t - dt)
+	# v1.2.3: مؤقّتات Pyromancer/Shinobi
+	r_cd = maxf(0.0, r_cd - dt)
+	r_active_t = maxf(0.0, r_active_t - dt)
+	if slash_fx.size() > 0:
+		var sfi := slash_fx.size() - 1
+		while sfi >= 0:
+			slash_fx[sfi]["life"] = float(slash_fx[sfi]["life"]) - dt
+			if float(slash_fx[sfi]["life"]) <= 0.0:
+				slash_fx.remove_at(sfi)
+			sfi -= 1
+	_fireball_step(dt)                 # كرات Fireball الطايرة (Pyromancer)
+	_shadow_assault_step(dt)           # Shadow Assault الجاري (Shinobi Q)
+	_rift_step(dt)                     # Judgement Rift الجاري (Shinobi R)
 	# شحنات داش الشينوبي بتتشحن واحدة واحدة (v1.2a: أسرع 18% — الداش هو الهوية)
-	if sig == "dashblade" and dash_charges < dash_charges_max:
+	if sig == "crescent" and dash_charges < dash_charges_max:
 		dash_recharge_t -= dt
 		if dash_recharge_t <= 0.0:
 			dash_charges += 1
 			if dash_charges < dash_charges_max:
 				dash_recharge_t = dash_cd_max * 0.82
 	# ضربة الداش (سلاح الشينوبي): كل عدو بيتقطع مرة واحدة لكل داش (v1.2a: ×1.65)
-	if sig == "dashblade" and dash_t > 0.0:
+	if sig == "crescent" and dash_t > 0.0:
 		for di in range(enemies.size() - 1, -1, -1):
 			var de = enemies[di]
 			if int(de.get("dashhit", -1)) != dash_id and Vector2(de["pos"]).distance_to(pp) < 40.0 + float(de["r"]):
 				de["dashhit"] = dash_id
 				damage_enemy(di, bullet_dmg * 1.65 * _sigm(), "dash")
+	# v1.2.3: منع الشينوبي من الوقوف داخل جسم عدو (طلّعه لمسافة آمنة لو انتهى الداش جوه hitbox)
+	if sig == "crescent" and dash_t <= 0.0 and enemies.size() > 0:
+		var un := _nearest_enemy()
+		if un >= 0:
+			var ev := pp - Vector2(enemies[un]["pos"])
+			var evl := ev.length()
+			var need := float(enemies[un]["r"]) + PR - 2.0
+			if evl < need and evl > 0.01:
+				pp = Vector2(enemies[un]["pos"]) + ev / evl * (need + 3.0)
+				pp.x = clampf(pp.x, PR, WW - PR)
+				pp.y = clampf(pp.y, PR, WH - PR)
 	# Fire Trail (قدرة الهالة): بقع نار خلفك + سرعة
 	if q_firetrail_t > 0.0:
 		q_firetrail_t -= dt
@@ -3133,7 +3201,7 @@ func _bot_move() -> Vector2:
 	var want := flee
 	# v1.2: شخصيات الالتحام — البوت لازم يقرّب من الأعداء وإلا سلاحه ما يشتغلش
 	# (بيوازن: هجوم نحو أقرب عدو + نصف نفور — والشينوبي بيقطع بالداش)
-	if (sig == "fireaura" or sig == "dashblade" or sig == "spinblade" or sig == "shockwave") and hp > maxhp * 0.45:
+	if (sig == "crescent" or sig == "spinblade" or sig == "shockwave") and hp > maxhp * 0.45:
 		var nb2 := _nearest_enemy()
 		if nb2 >= 0:
 			var atk_v := (Vector2(enemies[nb2]["pos"]) - pp)
@@ -3145,15 +3213,15 @@ func _bot_move() -> Vector2:
 			var hold := 90.0 + float(enemies[nb2]["r"])
 			if sig == "shockwave":
 				hold = 120.0 + float(enemies[nb2]["r"])
-			elif sig == "dashblade":
-				hold = 46.0 + float(enemies[nb2]["r"])
+			elif sig == "crescent":
+				hold = 58.0 + float(enemies[nb2]["r"])   # مدى السلاش ~92 — البوت يقف داخله ويقطع
 			elif sig == "spinblade":
 				hold = 55.0 + float(enemies[nb2]["r"])   # السيوف مداها 72px — لازم يقرّب كفاية
 			if atk_v.length() > hold:
 				want = atk_v.normalized() * 1.4 + flee * 0.55
 			else:
 				want = Vector2(-atk_v.y, atk_v.x).normalized() * 1.2 + flee * 0.6
-			if sig == "dashblade" and atk_v.length() < 280.0 and dash_charges > 1:
+			if sig == "crescent" and atk_v.length() < 280.0 and dash_charges > 1:
 				bot_dash = true
 			return want + (WC - pp) * 0.0012
 	if flee.length() < 0.35:
@@ -3561,7 +3629,7 @@ func _boss_step(e: Dictionary, dt: float) -> void:
 	# --- v1.1.4 Close Punish (معايرة v1.2): الالتصاق الفعلي بجسم الزعيم بس هو اللي بيتعاقب ---
 	# النطاق أضيق من مدى أسلحة الالتحام (هالة 100px / سيوف 72px) — أسلوب الالتحام مشروع،
 	# والدهس جوه جسم الزعيم هو الغلط. شخصيات الالتحام كمان ليها مهلة أطول.
-	var melee_sig := sig == "fireaura" or sig == "dashblade" or sig == "spinblade" or sig == "shockwave"
+	var melee_sig := sig == "crescent" or sig == "spinblade" or sig == "shockwave"
 	e["punish_cd"] = maxf(0.0, float(e.get("punish_cd", 0.0)) - dt)
 	var pw := float(e.get("punish_warn", 0.0))
 	if pw > 0.0:
@@ -3877,12 +3945,17 @@ func _enemy_step(dt: float) -> void:
 			e["hitflash"] = float(e["hitflash"]) - dt
 		# Burn DoT (v1.2 — سلاح Fire Aura): حرق متراكم، الزعماء يقاوموا 50%
 		var bt2 := float(e.get("burn_t", 0.0))
+		if float(e.get("flare_cd", 0.0)) > 0.0:
+			e["flare_cd"] = float(e["flare_cd"]) - dt
 		if bt2 > 0.0:
 			e["burn_t"] = bt2 - dt
 			var bdps := float(e.get("burn_dps", 0.0)) * (0.5 if String(e["type"]) == "boss" else 1.0)
 			e["hp"] = float(e["hp"]) - bdps * dt
 			stat_dmg_dealt += bdps * dt
 			dps_bucket += bdps * dt
+			if float(e["burn_t"]) <= 0.0:
+				e["burn_st"] = 0
+				e["burn_dps"] = 0.0
 			if float(e["hp"]) <= 0.0:
 				_kill_enemy(i)
 				i -= 1
@@ -4025,6 +4098,9 @@ func damage_enemy(idx: int, dmg: float, src: String = "bullet") -> void:
 	# (سلاح توقيعك هو سلاح الزعماء؛ الجانبية متخصصة في الزحام — قاعدة هوية مش nerf)
 	if is_boss and (src == "kunai" or src == "zap" or src == "orbit" or src == "frost"):
 		final *= 0.7
+	# v1.2.3: داش الشينوبي ضد الزعماء مخفّض (السلاش هو سلاح الزعماء مش الدهس)
+	if is_boss and src == "dash":
+		final *= 0.5
 	# Giant Slayer: +20% لكل رتبة ضد الزعماء والنخبة فقط (بركة موقفية)
 	var gs := int(ups_count.get("bossdmg", 0))
 	if gs > 0 and (is_boss or String(e["type"]) == "elite"):
@@ -4123,7 +4199,7 @@ func _kill_enemy(idx: int) -> void:
 	if combo > combo_best:
 		combo_best = combo
 	# Shinobi (v1.2a): قتلة بالداش بتردّ ربع شحنة — إتقان الداش بيتكافأ من غير ما يبقى لا نهائي
-	if sig == "dashblade" and kill_src == "dash" and dash_charges < dash_charges_max:
+	if sig == "crescent" and kill_src == "dash" and dash_charges < dash_charges_max:
 		dash_recharge_t = maxf(0.0, dash_recharge_t - dash_cd_max * 0.82 * 0.25)
 	var epos: Vector2 = e["pos"]
 	var etype: String = e["type"]
@@ -4302,6 +4378,234 @@ func _titan_wave(c: Vector2, radius: float, dmg: float, kb: float) -> void:
 	Audio.play_sfx("explode", -9.0, 0.65, 0.72)
 	shake = maxf(shake, 3.5)
 
+# ---------- v1.2.3: Pyromancer (Fire Bolt + Fireball) + Shinobi (Crescent Slash + Q/R) ----------
+# Burn بطبقات (حد أقصى 5) — كل طبقة تزيد DoT، والزعماء يقاوموا 50% (التطبيق في _enemy_step)
+func _ignite(e, stacks := 1) -> void:
+	var st := mini(5, int(e.get("burn_st", 0)) + stacks)
+	e["burn_st"] = st
+	e["burn_dps"] = float(st) * 7.0
+	e["burn_t"] = 2.6
+	# عند أقصى طبقات: flare pulse صغير (بتبريد لكل عدو)
+	if st >= 5 and float(e.get("flare_cd", 0.0)) <= 0.0:
+		e["flare_cd"] = 1.0
+		var isb := String(e["type"]) == "boss"
+		var fd := 14.0 * (0.5 if isb else 1.0)
+		e["hp"] = float(e["hp"]) - fd
+		stat_dmg_dealt += fd
+		dps_bucket += fd
+		_burst(Vector2(e["pos"]), Color(1.0, 0.7, 0.2), 8)
+
+# Fire Bolt: كرات نار مدى متوسط، دقة أقل — كل طلقة تكوّم Burn (منطق الانفجار في _bullet_step)
+func _fire_bolt() -> void:
+	var ni := _nearest_enemy()
+	if ni < 0:
+		return
+	var dir := (Vector2(enemies[ni]["pos"]) - pp).normalized()
+	var loaded := (fbolt_hits % 3) == 2   # الطلقة اللي هتكمّل الـ3 = "محمّلة" (أكبر/أسخن)
+	var shots := multishot
+	var spread := deg_to_rad(9.0)
+	var start := -spread * float(shots - 1) * 0.5
+	var center := (shots - 1) / 2
+	for k in shots:
+		var jitter := rng.randf_range(-0.06, 0.06)   # دقة أقل من الجندي
+		var v := dir.rotated(start + spread * float(k) + jitter) * bullet_speed * 0.82
+		var side := k != center
+		bullets.append({"pos": pp, "vel": v, "life": 1.05, "pierce": pierce, "bounce": ric_n,
+			"side": side, "exec": false, "firebolt": true, "hot": loaded and not side})
+	if loaded:
+		Audio.play_sfx("shoot", -8.0, 1.2, 1.35)
+	else:
+		Audio.play_sfx("shoot", -12.0, 0.92, 1.02)
+
+# انفجار Pyromancer: ضرر منطقة + Burn + مؤثر واضح (ضد الزعماء ضرر مخفّض 50%)
+func _fire_explosion(pos: Vector2, radius: float, dmg: float, stacks := 1) -> void:
+	radius *= _area()
+	_burst(pos, Color(1.0, 0.55, 0.15), 16)
+	if rings.size() < 26:
+		rings.append({"pos": pos, "t": 0.0, "max": radius, "col": Balance.COL_ENEMY_HI})
+	shake = maxf(shake, 3.0)
+	flash = minf(flash + 0.06, 0.5)
+	Audio.play_sfx("explode", -8.0, 0.9, 1.0)
+	var rad2 := radius * radius
+	for i in range(enemies.size() - 1, -1, -1):
+		var e = enemies[i]
+		var rr := radius + float(e["r"])
+		if Vector2(e["pos"]).distance_squared_to(pos) <= rr * rr:
+			var isb := String(e["type"]) == "boss"
+			var xd := dmg * (0.5 if isb else 1.0)
+			e["hp"] = float(e["hp"]) - xd
+			stat_dmg_dealt += xd
+			dps_bucket += xd
+			e["hitflash"] = 0.09
+			_ignite(e, stacks)
+			if float(e["hp"]) <= 0.0:
+				_kill_enemy(i)
+
+# Fireball Q: كرة نار كبيرة للأمام/أقرب عدو — تنفجر عند الاصطدام أو نهاية المدى + أرض مشتعلة
+func _cast_fireball() -> void:
+	var dir := (pvel.normalized() if pvel.length() > 40.0 else Vector2.RIGHT)
+	var ni := _nearest_enemy()
+	if ni >= 0:
+		dir = (Vector2(enemies[ni]["pos"]) - pp).normalized()
+	fireballs.append({"pos": Vector2(pp), "vel": dir * 360.0, "life": 1.1, "r": 16.0 * _area()})
+	Audio.play_sfx("explode", -10.0, 1.25, 1.4)
+
+# حركة كرات Fireball + انفجارها (تُستدعى كل إطار من _step)
+func _fireball_step(dt: float) -> void:
+	if fireballs.is_empty():
+		return
+	var i := fireballs.size() - 1
+	while i >= 0:
+		var fb = fireballs[i]
+		fb["pos"] = Vector2(fb["pos"]) + Vector2(fb["vel"]) * dt
+		fb["life"] = float(fb["life"]) - dt
+		var boom := float(fb["life"]) <= 0.0
+		var fp: Vector2 = fb["pos"]
+		if not boom:
+			for e in enemies:
+				var hr := float(fb["r"]) + float(e["r"])
+				if fp.distance_squared_to(e["pos"]) <= hr * hr:
+					boom = true
+					break
+		if fp.x < 0 or fp.x > WW or fp.y < 0 or fp.y > WH:
+			boom = true
+		if boom:
+			_fire_explosion(fp, 118.0, bullet_dmg * 1.9 * _sigm(), 2)
+			shake = maxf(shake, 5.0)
+			# أرض مشتعلة قصيرة (3-4ث) — تعيد استخدام fire_patches (بتحرق الأعداء)
+			for k in 5:
+				if fire_patches.size() < 46:
+					fire_patches.append({"pos": fp + Vector2(rng.randf_range(-46, 46), rng.randf_range(-46, 46)), "life": 3.5})
+			fireballs.remove_at(i)
+		i -= 1
+
+# Crescent Slash: قوس قطع أمامك (اتجاه الحركة أو أقرب عدو) — يقطع اللي في القوس والمدى
+func _crescent_slash() -> void:
+	var ni := _nearest_enemy()
+	if ni < 0:
+		return
+	# سلاح أوتوماتيك: القوس بيتّجه لأقرب عدو (يضمن إصابة الهدف حتى وإنت بتلف حواليه)
+	var aim := Vector2(enemies[ni]["pos"]) - pp
+	var ang := aim.angle()
+	var reach := (92.0 + 5.0 * float(multishot)) * _area()
+	var half := deg_to_rad(62.0)   # قوس ~124°
+	var dmg := bullet_dmg * 1.25 * _sigm() * (1.5 if berserk_t > 0.0 else 1.0)
+	var maxhits := 3 + multishot + int(ups_count.get("pierce", 0))
+	var hit := 0
+	var reach2 := reach * reach
+	for i in range(enemies.size() - 1, -1, -1):
+		if hit >= maxhits:
+			break
+		var e = enemies[i]
+		var to := Vector2(e["pos"]) - pp
+		var rr := reach + float(e["r"])
+		if to.length_squared() > rr * rr:
+			continue
+		if absf(wrapf(to.angle() - ang, -PI, PI)) <= half:
+			hit += 1
+			damage_enemy(i, dmg, "slash")
+	slash_fx.append({"pos": Vector2(pp), "ang": ang, "arc": half, "reach": reach, "life": 0.18, "max": 0.18})
+	Audio.play_sfx("hit", -9.0, 1.2, 1.35)
+
+# Shadow Assault Q: اختفِ واقطع 3-5 أعداء قريبين ثم ارجع (حصانة أثناءها) — ينفّذ عبر sassault في _step
+func _shadow_assault() -> void:
+	var pool := []
+	for i in enemies.size():
+		var d2: float = Vector2(enemies[i]["pos"]).distance_squared_to(pp)
+		if d2 < 380.0 * 380.0:
+			pool.append({"d": d2, "pos": Vector2(enemies[i]["pos"])})
+	pool.sort_custom(func(a, b): return float(a["d"]) < float(b["d"]))
+	var n := mini(5, pool.size())
+	if n <= 0:
+		invuln = maxf(invuln, 0.5)
+		_burst(pp, Color(0.5, 0.95, 0.7), 12)
+		return
+	var tg := []
+	for i in n:
+		tg.append(pool[i]["pos"])
+	sassault = {"t": 0.0, "step": 0.09, "i": 0, "targets": tg, "dmg": bullet_dmg * 0.9 * _sigm()}
+	invuln = maxf(invuln, float(n) * 0.09 + 0.35)
+	_toast(T("Shadow Assault!"), 1.0)
+	Audio.play_sfx("dash", -6.0, 1.0, 1.1)
+
+# Judgement Rift R (Ultimate): تجميد لحظي ثم سلاشات متعددة على مساحة واسعة — ينفّذ عبر rift في _step
+func _judgement_rift() -> void:
+	r_cd = r_cd_max
+	hitstop = maxf(hitstop, 0.12)
+	r_active_t = 0.9
+	invuln = maxf(invuln, 0.9)
+	shake = maxf(shake, 6.0)
+	Audio.play_sfx("boss", -6.0, 1.3, 1.4)
+	_flash_msg(T("JUDGEMENT RIFT!"), 1.4)
+	var R := 340.0 * _area()
+	var marks := []
+	for i in enemies.size():
+		if marks.size() >= 40:
+			break
+		if Vector2(enemies[i]["pos"]).distance_squared_to(pp) <= R * R:
+			marks.append(Vector2(enemies[i]["pos"]))
+	var extra := clampi(10 - marks.size(), 0, 10)
+	for k in extra:
+		var a := TAU * float(k) / float(maxi(1, extra))
+		marks.append(pp + Vector2(cos(a), sin(a)) * rng.randf_range(70.0, R))
+	rift = {"t": 0.35, "r": R, "dmg": bullet_dmg * 1.4 * _sigm(), "marks": marks, "done": false}
+
+# Shadow Assault الجاري: يقفز على الأهداف واحداً واحداً ويقطع (حصانة محفوظة أثناءه)
+func _shadow_assault_step(dt: float) -> void:
+	if sassault == null:
+		return
+	sassault["t"] = float(sassault["t"]) - dt
+	if float(sassault["t"]) > 0.0:
+		return
+	var ix := int(sassault["i"])
+	var tgs: Array = sassault["targets"]
+	if ix >= tgs.size():
+		sassault = null
+		return
+	var tp: Vector2 = tgs[ix]
+	trail.append({"pos": Vector2(pp), "life": 0.3})
+	pp = (tp + (pp - tp).normalized() * 30.0) if (pp - tp).length() > 1.0 else tp
+	pp.x = clampf(pp.x, PR, WW - PR)
+	pp.y = clampf(pp.y, PR, WH - PR)
+	var dmg2 := float(sassault["dmg"])
+	for j in range(enemies.size() - 1, -1, -1):
+		var e = enemies[j]
+		if Vector2(e["pos"]).distance_to(tp) < 60.0 + float(e["r"]):
+			var isb := String(e["type"]) == "boss"
+			damage_enemy(j, dmg2 * (0.5 if isb else 1.0), "slash")
+	slash_fx.append({"pos": Vector2(tp), "ang": rng.randf() * TAU, "arc": PI, "reach": 60.0, "life": 0.16, "max": 0.16})
+	_burst(tp, Color(0.6, 0.95, 0.8), 8)
+	Audio.play_sfx("hit", -9.0, 1.3, 1.45)
+	sassault["i"] = ix + 1
+	sassault["t"] = float(sassault["step"])
+	invuln = maxf(invuln, 0.2)
+
+# Judgement Rift الجاري: بعد windup قصير تنفجر السلاشات المتعددة على المدى (الزعماء hits محدودة)
+func _rift_step(dt: float) -> void:
+	if rift == null:
+		return
+	rift["t"] = float(rift["t"]) - dt
+	if not bool(rift["done"]) and float(rift["t"]) <= 0.0:
+		rift["done"] = true
+		var R: float = rift["r"]
+		var dmg3: float = rift["dmg"]
+		var rr2 := R * R
+		shake = maxf(shake, 10.0)
+		flash = minf(flash + 0.25, 0.7)
+		hitstop = maxf(hitstop, 0.08)
+		Audio.play_sfx("explode", -3.0, 0.7, 0.8)
+		for i in range(enemies.size() - 1, -1, -1):
+			if Vector2(enemies[i]["pos"]).distance_squared_to(pp) <= rr2:
+				var isb := String(enemies[i]["type"]) == "boss"
+				var hits := 1 if isb else 3
+				var per := dmg3 * (0.5 if isb else 1.0)
+				for h in hits:
+					if i < enemies.size() and float(enemies[i]["hp"]) > 0.0:
+						damage_enemy(i, per, "rift")
+		rift["t"] = 0.4   # يخلّي مؤثر السلاشات ظاهر لحظة بعد الانفجار
+	elif bool(rift["done"]) and float(rift["t"]) <= 0.0:
+		rift = null
+
 func _fire_step(dt: float) -> void:
 	fire_cd -= dt
 	# v1.2: سلاح التوقيع بيحدد "الرماية" — Titan موجات، والهالة/الداش/السيوف بلا رصاص
@@ -4310,7 +4614,19 @@ func _fire_step(dt: float) -> void:
 			_titan_wave(pp, (155.0 + 6.0 * float(multishot)) * _area(), bullet_dmg * 1.3 * _sigm(), 46.0)
 			fire_cd = maxf(0.9, fire_rate * 2.6)
 		return
-	if sig == "fireaura" or sig == "dashblade" or sig == "spinblade":
+	# Pyromancer: كرات نار مدى متوسط، دقة أقل + Burn + انفجار كل 3 إصابات (منطق الإصابة في _bullet_step)
+	if sig == "firebolt":
+		if fire_cd <= 0.0 and enemies.size() > 0:
+			_fire_bolt()
+			fire_cd = fire_rate
+		return
+	# Shinobi: Crescent Slash — قوس قطع مدى قريب-متوسط بدل الاعتماد على الداش كسلاح
+	if sig == "crescent":
+		if fire_cd <= 0.0 and enemies.size() > 0:
+			_crescent_slash()
+			fire_cd = maxf(0.30, fire_rate)
+		return
+	if sig == "spinblade":
 		return
 	if fire_cd > 0.0:
 		return
@@ -4375,7 +4691,17 @@ func _bullet_step(dt: float) -> void:
 					bsrc = "side"
 				if bool(b.get("exec", false)):
 					bd *= 1.5 if eb else 2.0
+				# Pyromancer Fire Bolt: كل إصابة تكوّم Burn + كل 3 إصابات = انفجار صغير
+				var firebolt := bool(b.get("firebolt", false))
+				var hitpos := Vector2(e["pos"])
+				if firebolt:
+					bsrc = "firebolt"
+					_ignite(e, 1)
 				damage_enemy(j, bd, bsrc)
+				if firebolt:
+					fbolt_hits += 1
+					if fbolt_hits % 3 == 0:
+						_fire_explosion(hitpos, 62.0, bullet_dmg * 0.85 * _sigm(), 1)
 				if int(b["pierce"]) > 0:
 					b["pierce"] = int(b["pierce"]) - 1
 				elif int(b["bounce"]) > 0:
@@ -4552,13 +4878,10 @@ func _use_q() -> void:
 			q_turret = {"pos": Vector2(pp), "t": 8.0, "cd": 0.3}
 			_toast(T("Turret deployed!"), 1.4)
 			Audio.play_sfx("levelup", -8.0, 0.7, 0.75)
-		"fireaura":
-			q_firetrail_t = 4.0
-			burst_spd_t = maxf(burst_spd_t, 4.0)   # +سرعة أثناء الأثر الناري
-			Audio.play_sfx("explode", -12.0, 1.3, 1.4)
-		"dashblade":
-			q_clone = {"pos": Vector2(pp) + Vector2(24, 0), "t": 0.3, "dashes": 3}
-			Audio.play_sfx("dash", -6.0, 0.8, 0.85)
+		"firebolt":
+			_cast_fireball()
+		"crescent":
+			_shadow_assault()
 		"spinblade":
 			berserk_t = 5.0
 			_toast(T("BERSERK!"), 1.4)
@@ -5060,7 +5383,7 @@ func _eligible_pool() -> Array:
 		var utags: Array = u.get("tags", [])
 		if not shoots and utags.has("Projectile") and String(u["id"]) != "kunai" and String(u["id"]) != "precision":
 			continue
-		if (sig == "fireaura" or sig == "dashblade" or sig == "spinblade") and utags.has("FireRate"):
+		if (sig == "crescent" or sig == "spinblade") and utags.has("FireRate"):
 			continue
 		if _card_weight(u) <= 0:
 			continue
@@ -6076,7 +6399,7 @@ func _update_hud() -> void:
 	lbl_hp.add_theme_color_override("font_color", hp_col)
 	xp_fill.size.x = 254.0 * clampf(float(xp) / float(xp_need), 0.0, 1.0)
 	# الداش: الشينوبي بيشوف شحناته (3) — الباقي شريط التبريد المعتاد
-	if sig == "dashblade":
+	if sig == "crescent":
 		var chf := (float(dash_charges) + (1.0 - clampf(dash_recharge_t / dash_cd_max, 0.0, 1.0)) * (1.0 if dash_charges < dash_charges_max else 0.0)) / float(dash_charges_max)
 		dash_fill.size.x = 116.0 * clampf(chf, 0.0, 1.0)
 		dash_fill.color = Color(0.35, 0.9, 0.6) if dash_charges > 0 else Color(0.4, 0.45, 0.55)
@@ -6091,6 +6414,21 @@ func _update_hud() -> void:
 	else:
 		lbl_q.text = "[Q] %.1fs" % q_cd
 		lbl_q.add_theme_color_override("font_color", Color(0.55, 0.58, 0.66))
+	# v1.2.3: مؤشر الأولتيمت R — الشينوبي فقط (مقفول قبل Level 7)
+	if sig == "crescent":
+		lbl_r.visible = true
+		var runlock := int(CHARS[char_sel].get("runlock", 7))
+		if level < runlock:
+			lbl_r.text = "[R] " + T("R Locked") + " (Lv%d)" % runlock
+			lbl_r.add_theme_color_override("font_color", Color(0.5, 0.52, 0.58))
+		elif r_cd <= 0.0:
+			lbl_r.text = "[R] " + T(String(CHARS[char_sel].get("rname", "Ultimate")))
+			lbl_r.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+		else:
+			lbl_r.text = "[R] %.0fs" % ceil(r_cd)
+			lbl_r.add_theme_color_override("font_color", Color(0.55, 0.58, 0.66))
+	else:
+		lbl_r.visible = false
 
 # ================================================================
 #  DRAW
@@ -6460,13 +6798,34 @@ func _draw() -> void:
 		draw_texture_rect(ebt, Rect2(bp2.x - rr, bp2.y - rr, rr * 2.0, rr * 2.0), false, ecol)
 
 	_be("d_ebullet")
-	# orbit blades
+	# orbit blades — الفارس: سيوف حقيقية (أكبر)؛ غيره: أشواك دوّارة
 	for k in orbit_n:
 		var obp := _orbit_blade_pos(k)
-		draw_set_transform(obp, orbit_ang * 2.0, Vector2.ONE)
-		draw_rect(Rect2(-9, -9, 18, 18), Color(0.3, 0.9, 0.95))
-		draw_rect(Rect2(-5, -5, 10, 10), Color(0.7, 1.0, 1.0))
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		if sig == "spinblade":
+			# سيف يشير للخارج من اللاعب؛ Berserk = أكبر + توهّج ذهبي
+			var gsz := 1.28 * (1.35 if berserk_t > 0.0 else 1.0)
+			var rad := (obp - pp).angle()
+			draw_set_transform(obp, rad, Vector2.ONE * gsz)
+			if berserk_t > 0.0:
+				draw_circle(Vector2.ZERO, 22.0, Color(1.0, 0.8, 0.25, 0.22 + 0.1 * sin(animt * 14.0)))
+			var steel := Color(0.72, 0.80, 0.95)
+			var edge := Color(0.90, 0.95, 1.0)
+			if berserk_t > 0.0:
+				steel = Color(1.0, 0.88, 0.5)
+				edge = Color(1.0, 0.97, 0.75)
+			# النصل
+			draw_colored_polygon(PackedVector2Array([Vector2(-6, -3.0), Vector2(18, -2.2), Vector2(26, 0), Vector2(18, 2.2), Vector2(-6, 3.0)]), Balance.COL_INK)
+			draw_colored_polygon(PackedVector2Array([Vector2(-5, -2.0), Vector2(18, -1.3), Vector2(24, 0), Vector2(18, 1.3), Vector2(-5, 2.0)]), steel)
+			draw_line(Vector2(-3, 0), Vector2(22, 0), edge, 1.2)
+			# الصليب والمقبض
+			draw_rect(Rect2(-8, -7, 4, 14), Color(0.55, 0.42, 0.22))
+			draw_rect(Rect2(-16, -2, 9, 4), Color(0.42, 0.32, 0.18))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			draw_set_transform(obp, orbit_ang * 2.0, Vector2.ONE)
+			draw_rect(Rect2(-9, -9, 18, 18), Color(0.3, 0.9, 0.95))
+			draw_rect(Rect2(-5, -5, 10, 10), Color(0.7, 1.0, 1.0))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 	# player bullets — أزرق (بتاعك) عشان تتفرّق فورًا عن رصاص العدو الأحمر
 	# نرد المقامر بيلف وعليه نقطة (هوية بصرية للسلاح)
@@ -6478,6 +6837,13 @@ func _draw() -> void:
 			draw_colored_polygon(PackedVector2Array([Vector2(-9, -2.5), Vector2(7, -1), Vector2(11, 0), Vector2(7, 1), Vector2(-9, 2.5)]),
 				Color(0.92, 0.95, 1.0) if not bool(b.get("ret", false)) else Color(0.65, 0.95, 0.85))
 			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			continue
+		if bool(b.get("firebolt", false)):
+			var fr := (7.5 if bool(b.get("hot", false)) else 5.0) * bsize
+			var fpc := Color(1.0, 0.85, 0.35) if bool(b.get("hot", false)) else Color(1.0, 0.55, 0.2)
+			draw_circle(Vector2(b["pos"]), fr + 2.0, Color(0.9, 0.3, 0.08, 0.35))
+			draw_circle(Vector2(b["pos"]), fr, fpc)
+			draw_circle(Vector2(b["pos"]), fr * 0.45, Color(1.0, 0.97, 0.8))
 			continue
 		if bool(b.get("dice", false)):
 			draw_set_transform(b["pos"], animt * 9.0 + Vector2(b["pos"]).x * 0.05, Vector2.ONE * bsize)
@@ -6505,6 +6871,36 @@ func _draw() -> void:
 		var pos: Vector2 = p["pos"]
 		draw_rect(Rect2(pos.x - s * 0.5, pos.y - s * 0.5, s, s), p["col"])
 
+	# v1.2.3: أقواس Crescent Slash / Shadow Assault
+	for sx in slash_fx:
+		var sl := clampf(float(sx["life"]) / maxf(0.001, float(sx["max"])), 0.0, 1.0)
+		var sang: float = sx["ang"]
+		var sarc: float = sx["arc"]
+		var srch: float = float(sx["reach"]) * (0.85 + 0.15 * (1.0 - sl))
+		var scol := Color(0.75, 0.98, 0.85, sl * 0.8)
+		draw_arc(Vector2(sx["pos"]), srch, sang - sarc, sang + sarc, 22, scol, 4.0 * sl + 1.0)
+		draw_arc(Vector2(sx["pos"]), srch * 0.7, sang - sarc, sang + sarc, 18, Color(1, 1, 1, sl * 0.5), 2.0)
+	# v1.2.3: كرات Fireball الطايرة (Pyromancer Q)
+	for fb in fireballs:
+		var fbp: Vector2 = fb["pos"]
+		var fbr: float = float(fb["r"])
+		draw_circle(fbp, fbr + 6.0 + sin(animt * 18.0) * 2.0, Color(0.95, 0.35, 0.08, 0.30))
+		draw_circle(fbp, fbr, Color(1.0, 0.55, 0.18))
+		draw_circle(fbp, fbr * 0.5, Color(1.0, 0.95, 0.75))
+	# v1.2.3: Judgement Rift — علامات السلاش قبل الانفجار (windup) ثم ومضتها
+	if rift != null:
+		var rdone := bool(rift["done"])
+		var rmarks: Array = rift["marks"]
+		var ra := 0.9 if not rdone else clampf(float(rift["t"]) / 0.4, 0.0, 1.0)
+		for mk in rmarks:
+			var mp: Vector2 = mk
+			var ma := (Vector2(mp).x + Vector2(mp).y) * 0.05
+			var ln := 26.0 if not rdone else 40.0
+			var mc := Color(0.4, 0.7, 1.0, ra * 0.7) if not rdone else Color(0.9, 0.95, 1.0, ra)
+			var dv := Vector2(cos(ma), sin(ma)) * ln
+			draw_line(mp - dv, mp + dv, mc, 3.0 if not rdone else 4.0)
+		if not rdone:
+			draw_arc(pp, float(rift["r"]), 0, TAU, 40, Color(0.5, 0.7, 1.0, 0.25), 2.0)
 	# حلقات موت متمددة
 	for rg in rings:
 		var rt: float = rg["t"]
@@ -6529,7 +6925,7 @@ func _draw() -> void:
 			pa = 0.35
 		_shadow(pp, PR + 3.0)
 		# Shinobi: afterimages أثناء الداش + حلقة سماوية = i-frames شغالة (وضوح الحصانة)
-		if sig == "dashblade":
+		if sig == "crescent":
 			if dash_t > 0.0 and pvel.length() > 10.0:
 				var back := -pvel.normalized()
 				_draw_hero(pp + back * 26.0, char_sel, PR, 0.35)
@@ -6767,7 +7163,7 @@ func _draw_hero(pos: Vector2, idx: int, s: float, alpha: float, player := false)
 			var sdir := (pvel.normalized() if player and pvel.length() > 30.0 else Vector2.RIGHT)
 			draw_line(pos + sdir * s * 0.4, pos + sdir * (s + 8.0), Color(acc2.r, acc2.g, acc2.b, alpha), 3.0)
 			draw_circle(pos + sdir * (s + 11.0), 1.8, Color(1, 1, 1, alpha * 0.8))
-		1:  # Fire Aura: ألسنة لهب فوق الرأس
+		1:  # Pyromancer: ألسنة لهب فوق الرأس
 			for k in 3:
 				var fx := pos.x - s * 0.55 + s * 0.55 * k
 				var fh := s * (0.55 + 0.25 * sin(animt * 7.0 + k * 2.0))

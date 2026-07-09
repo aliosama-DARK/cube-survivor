@@ -28,8 +28,9 @@ const ENEMY_PAL := [
 
 # ============================================================
 #  الأبطال (Survivors) — v1.2: سلاح توقيع حصري + قدرة Q + هوية بصرية + skins
-#  sig: "rifle" رصاص دقيق · "fireaura" هالة+حرق · "dashblade" هجوم داش (3 شحنات)
+#  sig: "rifle" رصاص دقيق · "firebolt" كرات نار (انفجار كل 3 إصابات) · "crescent" سلاش قوسي
 #       · "spinblade" سيوف دوّارة · "shockwave" موجات صادمة · "dice" نرد بكريت أعلى
+#  (v1.2.3: Fire Aura → Pyromancer ساحر ناري · Shinobi بقى Shadow Slayer بسلاش + R Ultimate)
 #  bw = أوزان بالوسوم · pw = أوزان بأسماء محددة (تفضيلات الأسلحة الجانبية v1.2 B/C)
 # ============================================================
 const CHARS := [
@@ -45,26 +46,27 @@ const CHARS := [
 			{"name": "Desert Soldier", "col": Color(0.72, 0.60, 0.38), "hint": "Reach Stage 3 with Soldier"},
 			{"name": "Arctic Soldier", "col": Color(0.72, 0.80, 0.88), "hint": "Win with Soldier"},
 			{"name": "Black Ops", "col": Color(0.20, 0.22, 0.26), "hint": "Win at Danger II+"}]},
-	{"name": "Fire Aura", "col": Color(0.95, 0.42, 0.12), "col2": Color(0.25, 0.10, 0.08), "role": "Burning Core", "cost": 400, "hint": "or 400 kills in a run",
-		"desc": "A burning core that melts enemies up close, but must live inside danger",
-		"stats": [3, 3, 2, 3, 2], "passive": "Burn stacks up on foes inside the aura. Soul Steal & Recovery are stronger",
-		"sig": "fireaura", "signame": "Living Flame", "sigdesc": "A fire aura that stacks burn on anything inside it",
-		"qname": "Fire Trail", "qdesc": "4s: leave burning ground behind you and gain +10% speed", "qcd": 12.0,
-		"playstyle": "Close-range / Zone control", "strength": "Melts crowds that chase him", "weak": "Short reach - must stand in danger", "difficulty": "Medium",
-		"bw": {"Sustain": 2.2, "Healing": 2.2, "AoE": 1.8, "Defense": 1.2, "Crit": 0.6},
-		"pw": {"frostorb": 1.5, "orbit": 1.5, "acore": 1.6, "area": 1.6, "kunai": 1.4},
-		"skins": [{"name": "Ember Core", "col": Color(0.95, 0.42, 0.12), "hint": "Default"},
-			{"name": "Blue Flame", "col": Color(0.35, 0.62, 0.98), "hint": "Reach Stage 4 with Fire Aura"},
+	{"name": "Pyromancer", "col": Color(0.95, 0.42, 0.12), "col2": Color(1.0, 0.80, 0.25), "role": "Fire Mage", "cost": 400, "hint": "or 400 kills in a run",
+		"desc": "A fire caster who burns groups with bolts, blasts, and explosive rhythm",
+		"stats": [3, 3, 3, 3, 2], "passive": "Fire Bolts stack Burn - every 3rd hit erupts in a small explosion",
+		"sig": "firebolt", "signame": "Fire Bolt", "sigdesc": "Mid-range fire bolts - every 3 hits explode",
+		"qname": "Fireball", "qdesc": "Hurl a heavy fireball: big blast, burning ground, and Burn stacks", "qcd": 14.0,
+		"playstyle": "Mid-range / AoE / Burn", "strength": "Great against small groups", "weak": "Less accurate and fragile up close", "difficulty": "Medium",
+		"bw": {"AoE": 2.2, "Damage": 1.6, "Projectile": 1.2, "Defense": 0.8, "Healing": 0.5, "Sustain": 0.5},
+		"pw": {"bomb": 1.6, "chain": 1.5, "gpow": 1.6, "area": 1.6, "mark": 1.3},
+		"skins": [{"name": "Ember Mage", "col": Color(0.95, 0.42, 0.12), "hint": "Default"},
+			{"name": "Blue Flame", "col": Color(0.35, 0.62, 0.98), "hint": "Reach Stage 4 with Pyromancer"},
 			{"name": "Inferno", "col": Color(0.92, 0.18, 0.10), "hint": "Kill 500 in one run"},
-			{"name": "Ashen Flame", "col": Color(0.55, 0.52, 0.50), "hint": "Win with Fire Aura"}]},
-	{"name": "Shinobi", "col": Color(0.16, 0.20, 0.24), "col2": Color(0.30, 0.85, 0.55), "role": "Shadow", "cost": 250, "hint": "or reach Stage 3",
-		"desc": "A fragile shadow built around speed, dashes, and perfect timing",
-		"stats": [2, 5, 3, 1, 3], "passive": "3 dash charges - dash kills refund a quarter charge. The dash itself is the weapon",
-		"sig": "dashblade", "signame": "Shadow Cut", "sigdesc": "Dashing slices everything you pass through (brief i-frames)",
-		"qname": "Shadow Clone", "qdesc": "Summon a clone that performs 3 dash cuts (30% damage) then vanishes", "qcd": 16.0,
-		"playstyle": "Mobility / Hit-and-run", "strength": "Untouchable while dashes last", "weak": "Dies fast when cornered without charges", "difficulty": "High",
-		"bw": {"Speed": 2.2, "Dash": 2.4, "Magnet": 1.4, "Healing": 0.6, "Sustain": 0.6},
-		"pw": {"frostorb": 1.5, "orbit": 1.5, "score": 1.8, "frtrail": 1.6, "kunai": 1.4},
+			{"name": "Ashen Flame", "col": Color(0.55, 0.52, 0.50), "hint": "Win with Pyromancer"}]},
+	{"name": "Shinobi", "col": Color(0.16, 0.20, 0.24), "col2": Color(0.30, 0.85, 0.55), "role": "Shadow Slayer", "cost": 250, "hint": "or reach Stage 3",
+		"desc": "A fragile assassin who carves foes with fast crescent slashes and dashes",
+		"stats": [3, 5, 4, 1, 3], "passive": "Crescent slashes at close-mid range - 3 dash charges (kills refund). Ultimate unlocks at Lv 7",
+		"sig": "crescent", "signame": "Crescent Slash", "sigdesc": "Fast arc slashes at close-mid range (cleave)",
+		"qname": "Shadow Assault", "qdesc": "Vanish and cut 3-5 nearby foes in a blur, then reappear (i-frames)", "qcd": 18.0,
+		"rname": "Judgement Rift", "rdesc": "Freeze time briefly, then unleash multi-hit slashes across a wide area", "runlock": 7, "rcd": 60.0,
+		"playstyle": "Melee / Hit-and-run", "strength": "Shreds packs with slashes and dashes", "weak": "Fragile - punished when cornered", "difficulty": "High",
+		"bw": {"Speed": 2.0, "Dash": 2.0, "Crit": 1.4, "Damage": 1.3, "Magnet": 1.2, "Healing": 0.6, "Sustain": 0.6},
+		"pw": {"orbit": 1.5, "mark": 1.5, "score": 1.8, "ccore": 1.4, "kunai": 1.3},
 		"skins": [{"name": "Shadow", "col": Color(0.16, 0.20, 0.24), "hint": "Default"},
 			{"name": "Jade", "col": Color(0.14, 0.35, 0.24), "hint": "Reach Stage 3 with Shinobi"},
 			{"name": "Crimson", "col": Color(0.40, 0.12, 0.14), "hint": "x50 combo with Shinobi"},
@@ -109,7 +111,7 @@ const CHARS := [
 ]
 
 # أسماء الشخصيات القديمة → الجديدة (ترحيل حفظ v1.1 → v1.2)
-const CHAR_RENAME := {"Burner": "Fire Aura", "Runner": "Shinobi", "Wrecker": "Knight", "Specter": "Gambler"}
+const CHAR_RENAME := {"Burner": "Pyromancer", "Fire Aura": "Pyromancer", "Runner": "Shinobi", "Wrecker": "Knight", "Specter": "Gambler"}
 
 # --- مستويات الصعوبة (Danger tiers) — كل مستوى يغيّر "قواعد" مش أرقام بس ---
 const DIFF_TIERS := [
@@ -190,7 +192,7 @@ const ACHIEVEMENTS := [
 	{"id": "realm3",     "name": "Realm Walker",  "desc": "Reach Stage 3",               "reward": 40, "unlock": "Shinobi"},
 	{"id": "bossslayer", "name": "Boss Slayer",   "desc": "Defeat any boss",             "reward": 25},
 	{"id": "centurion",  "name": "Centurion",     "desc": "300 kills in one run",        "reward": 50},
-	{"id": "massacre",   "name": "Massacre",      "desc": "500 kills in one run",        "reward": 100, "unlock": "Fire Aura"},
+	{"id": "massacre",   "name": "Massacre",      "desc": "500 kills in one run",        "reward": 100, "unlock": "Pyromancer"},
 	{"id": "triple",     "name": "Triple Threat", "desc": "Defeat 3 bosses in one run",  "reward": 60, "unlock": "Knight"},
 	{"id": "combo50",    "name": "Combo Master",  "desc": "Reach a x50 combo",           "reward": 40},
 	{"id": "evolved",    "name": "Evolved",       "desc": "Trigger a weapon evolution",  "reward": 50},
