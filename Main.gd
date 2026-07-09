@@ -6,7 +6,7 @@ extends Node2D
 # ============================================================
 
 const DBG_INPUT := false
-const GAME_VERSION := "v1.2.3"
+const GAME_VERSION := "v1.2.5"
 # لقطات الشاشة للتطوير: تُفعَّل عبر سطر الأوامر:  godot --path . -- --shot=<scene> [--shotout=<path>]
 # المشاهد: menu | menu_ar | settings | play | boss | levelup | lang | cover
 var SHOTMODE := false
@@ -261,6 +261,18 @@ const TR := {
 	"Mid-range / AoE / Burn": "مدى متوسط / منطقة / حرق", "Great against small groups": "قوي ضد المجموعات الصغيرة", "Less accurate and fragile up close": "أقل دقة وهش من قريب",
 	"Melee / Hit-and-run": "التحام / اضرب واهرب", "Shreds packs with slashes and dashes": "بيمزّق الحشود بالسلاش والداش", "Fragile - punished when cornered": "هش - بيتعاقب لو اتحاصر",
 	"R Locked": "R مقفولة", "Unlocks at Lv 7": "بتفتح عند Lv 7", "JUDGEMENT RIFT!": "!صدع الحساب", "Shadow Assault!": "!اجتياح ظلّي",
+	# v1.2.5: أولتيمت كل الشخصيات
+	"Heavy Machine Gun": "الرشاش الثقيل", "5s: unleash a giant machine gun - huge fire rate and damage (slower while firing)": "5ث: رشاش عملاق - إيقاع وضرر هائل (أبطأ أثناء الرمي)",
+	"Inferno Overload": "طوفان الجحيم", "7s: every shot becomes an exploding mini-fireball that ignites the ground": "7ث: كل طلقة بقت كرة نار صغيرة بتنفجر وبتشعل الأرض",
+	"Giant Blade": "السيف العملاق", "5s: swing one huge sword - fast, heavy, wide cleaving arcs": "5ث: أرجح سيفاً ضخماً - سريع وتقيل وأقواس عريضة",
+	"Cataclysm Shockwave": "الموجة الكارثية", "Smash the ground for a huge blast - clears commons, hurls elites": "اضرب الأرض بموجة هائلة - تمسح العادي وترمي النخبة",
+	"Fate Gamble": "مقامرة القدر", "Roll fate: 50% +40% damage / 50% -40% damage for 30s (no stacking)": "ارمِ القدر: 50% +40% ضرر / 50% -40% ضرر لمدة 30ث (بلا تراكم)",
+	"HEAVY MACHINE GUN!": "!الرشاش الثقيل", "INFERNO OVERLOAD!": "!طوفان الجحيم", "GIANT BLADE!": "!السيف العملاق",
+	"CATACLYSM SHOCKWAVE!": "!الموجة الكارثية", "FATE GAMBLE!": "!مقامرة القدر",
+	"FATE BLESSING! +40% DMG (30s)": "!بركة القدر! +40% ضرر (30ث)", "FATE CURSE! -40% DMG (30s)": "!لعنة القدر! -40% ضرر (30ث)",
+	"BAD ROLL! -15% DMG (8s)": "!رمية سيئة -15% ضرر (8ث)", "LUCKY HIT! +15% DMG (8s)": "!ضربة حظ +15% ضرر (8ث)",
+	"GOOD ROLL! +25% CRIT (10s)": "!رمية حلوة +25% كريت (10ث)", "BIG WIN! +40% DMG +20% CRIT (8s)": "!مكسب كبير +40% ضرر +20% كريت (8ث)",
+	"JACKPOT! ALL CRITS (5s)": "!جاكبوت! كله كريت (5ث)", "CURSED ROLL! -20% HP": "!رمية ملعونة -20% صحة",
 	"Tactician": "تكتيكي", "Burning Core": "قلب محترق", "Shadow": "ظل",
 	"Blade Wall": "جدار السيوف", "Fortress": "الحصن", "High Roller": "مقامر كبير",
 	"A tactical survivor who wins by positioning, turrets, and controlled fire": "ناجٍ تكتيكي بيكسب بالتمركز والتورريت والرماية المحسوبة",
@@ -831,7 +843,13 @@ var r_cd := 0.0            # تبريد الأولتيمت (Judgement Rift)
 var r_cd_max := 60.0
 var r_active_t := 0.0      # نافذة الحصانة أثناء تنفيذ R
 var rift = null             # Judgement Rift الجاري {t, r, dmg, marks}
-var lbl_r: Label           # مؤشر الأولتيمت R في الـ HUD (الشينوبي فقط)
+var lbl_r: Label           # مؤشر الأولتيمت R في الـ HUD (كل الشخصيات)
+# v1.2.5: أولتيمت لكل الشخصيات
+var r_buff_t := 0.0        # مدة الأولتيمت النشط (Soldier HMG / Pyromancer Inferno / Knight Giant Blade)
+var r_fate_mul := 1.0      # مضاعف ضرر Gambler Fate Gamble
+var r_fate_t := 0.0        # مدة Fate Gamble المتبقية
+var r_fate_good := false   # بركة (true) أم لعنة (false)
+var lbl_status: Label      # مؤشر حالة مؤقتة (بافات المقامر مع عدّاد)
 # --- v1.2 B/C: أسلحة جانبية + تطوّرات ---
 var kunai_cd := 0.0        # إيقاع الكوناي
 var forb_ang := 0.0        # زاوية دوران Frost Orb
@@ -1384,7 +1402,11 @@ func _build_hud() -> void:
 	lbl_r = _mk_label(Vector2(152, 104), 16, Color(0.75, 0.85, 1.0))
 	lbl_r.size = Vector2(180, 22)
 	lbl_r.visible = false
-	lbl_combo = _mk_label(Vector2(24, 128), 26, Color(1, 0.85, 0.35))
+	# v1.2.5: مؤشر حالة مؤقتة (بافات المقامر) تحت مؤشر R
+	lbl_status = _mk_label(Vector2(152, 124), 15, Color(0.6, 1.0, 0.6))
+	lbl_status.size = Vector2(200, 20)
+	lbl_status.visible = false
+	lbl_combo = _mk_label(Vector2(24, 150), 26, Color(1, 0.85, 0.35))
 	lbl_combo.visible = false
 	# مؤشر WOUNDED جنب شريط الصحة — عشان اللاعب ما يفتكرش إن العلاج باظ
 	lbl_wound = _mk_label(Vector2(270, 62), 18, Color(1.0, 0.55, 0.15))
@@ -2050,7 +2072,7 @@ func _confirm_lang() -> void:
 
 func _hud_visible(v: bool) -> void:
 	for n in [lbl_kills, lbl_level, lbl_time, lbl_stage, lbl_boss,
-			hp_back, hp_fill, lbl_hp, lbl_q, lbl_r, xp_back, xp_fill, dash_back, dash_fill]:
+			hp_back, hp_fill, lbl_hp, lbl_q, lbl_r, lbl_status, xp_back, xp_fill, dash_back, dash_fill]:
 		n.visible = v
 	for p in hud_panels:
 		p.visible = v
@@ -2304,6 +2326,7 @@ func _new_run() -> void:
 	# تصفير v1.2.3 (Pyromancer + Shinobi rework)
 	fbolt_hits = 0; fireballs.clear(); slash_cd = 0.0; slash_fx.clear()
 	sassault = null; rift = null; r_active_t = 0.0
+	r_buff_t = 0.0; r_fate_mul = 1.0; r_fate_t = 0.0; r_fate_good = false
 	r_cd_max = float(CHARS[char_sel].get("rcd", 60.0))
 	r_cd = r_cd_max   # الأولتيمت مش جاهز بداية الجولة
 	evo_bladestorm = false; evo_ewinter = false; evo_meteor = false
@@ -2736,11 +2759,11 @@ func _step(dt: float) -> void:
 	var want_q := (AUTOPLAY and enemies.size() > 5) if AUTOPLAY else (Input.is_physical_key_pressed(KEY_Q) or Input.is_joy_button_pressed(0, JOY_BUTTON_X))
 	if want_q and q_cd <= 0.0 and state == ST_PLAY and sassault == null:
 		_use_q()
-	# v1.2.3: أولتيمت R (الشينوبي فقط، بيفتح عند Level 7) — R في اللعب لا يتعارض مع reroll (اللي في شاشة الارتقاء)
-	if sig == "crescent" and level >= int(CHARS[char_sel].get("runlock", 7)) and r_cd <= 0.0 and rift == null and state == ST_PLAY:
+	# v1.2.5: أولتيمت R لكل الشخصيات (يفتح عند Level 7، تبريد ثابت 60ث) — R في اللعب لا يتعارض مع reroll (شاشة الارتقاء فقط)
+	if level >= int(CHARS[char_sel].get("runlock", 7)) and r_cd <= 0.0 and rift == null and r_buff_t <= 0.0 and sassault == null and state == ST_PLAY:
 		var want_r := (AUTOPLAY and enemies.size() > 6) if AUTOPLAY else (Input.is_physical_key_pressed(KEY_R) or Input.is_joy_button_pressed(0, JOY_BUTTON_Y))
 		if want_r:
-			_judgement_rift()
+			_use_r()
 	# Shinobi: 3 شحنات داش (الداش نفسه السلاح) — الباقي بشحنة/تبريد كالمعتاد
 	var can_dash := (dash_charges > 0 and dash_cd <= 0.0) if sig == "crescent" else dash_cd <= 0.0
 	if want_dash and can_dash and mv != Vector2.ZERO:
@@ -2780,6 +2803,11 @@ func _step(dt: float) -> void:
 		spd *= 1.0 + 0.08 * float(ups_count.get("closecall", 0))   # باف المراوغة
 	if berserk_t > 0.0:
 		spd *= 1.25   # Berserk الفارس
+	# v1.2.5: بطء أثناء أولتيمت الرشاش الثقيل / السيف العملاق
+	if r_buff_t > 0.0 and sig == "rifle":
+		spd *= 0.82
+	if r_buff_t > 0.0 and sig == "spinblade":
+		spd *= 0.90
 	if q_firetrail_t > 0.0:
 		spd *= 1.10   # Fire Trail
 	if theme_idx() == 2:
@@ -2831,9 +2859,13 @@ func _step(dt: float) -> void:
 	g_rate_t = maxf(0.0, g_rate_t - dt)
 	roll_anim_t = maxf(0.0, roll_anim_t - dt)
 	berserk_t = maxf(0.0, berserk_t - dt)
-	# v1.2.3: مؤقّتات Pyromancer/Shinobi
+	# v1.2.3/1.2.5: مؤقّتات الأولتيمت
 	r_cd = maxf(0.0, r_cd - dt)
 	r_active_t = maxf(0.0, r_active_t - dt)
+	r_buff_t = maxf(0.0, r_buff_t - dt)
+	r_fate_t = maxf(0.0, r_fate_t - dt)
+	if r_fate_t <= 0.0:
+		r_fate_mul = 1.0
 	if slash_fx.size() > 0:
 		var sfi := slash_fx.size() - 1
 		while sfi >= 0:
@@ -4091,6 +4123,9 @@ func damage_enemy(idx: int, dmg: float, src: String = "bullet") -> void:
 			e["burn_t"] = 2.0
 	if g_dmg_t > 0.0:
 		final *= g_dmg_mul   # مكسب/عقوبة الرمية
+	# v1.2.5: Gambler Fate Gamble — بركة/لعنة ضرر 30ث
+	if r_fate_t > 0.0:
+		final *= r_fate_mul
 	# v1.2-D: طور الدرع — الزعيم المتقوقع بياخد 20% فقط (نافذة إعادة تموضع متلغرفة)
 	if is_boss and float(e.get("shell_t", 0.0)) > 0.0:
 		final *= 0.2
@@ -4401,6 +4436,7 @@ func _fire_bolt() -> void:
 	if ni < 0:
 		return
 	var dir := (Vector2(enemies[ni]["pos"]) - pp).normalized()
+	var inferno := r_buff_t > 0.0   # Inferno Overload: كل طلقة بقت كرة نار صغيرة تنفجر
 	var loaded := (fbolt_hits % 3) == 2   # الطلقة اللي هتكمّل الـ3 = "محمّلة" (أكبر/أسخن)
 	var shots := multishot
 	var spread := deg_to_rad(9.0)
@@ -4411,7 +4447,7 @@ func _fire_bolt() -> void:
 		var v := dir.rotated(start + spread * float(k) + jitter) * bullet_speed * 0.82
 		var side := k != center
 		bullets.append({"pos": pp, "vel": v, "life": 1.05, "pierce": pierce, "bounce": ric_n,
-			"side": side, "exec": false, "firebolt": true, "hot": loaded and not side})
+			"side": side, "exec": false, "firebolt": true, "hot": (loaded and not side) or inferno, "infernal": inferno})
 	if loaded:
 		Audio.play_sfx("shoot", -8.0, 1.2, 1.35)
 	else:
@@ -4550,6 +4586,116 @@ func _judgement_rift() -> void:
 		marks.append(pp + Vector2(cos(a), sin(a)) * rng.randf_range(70.0, R))
 	rift = {"t": 0.35, "r": R, "dmg": bullet_dmg * 1.4 * _sigm(), "marks": marks, "done": false}
 
+# ---------- v1.2.5: موزّع الأولتيمت R لكل الشخصيات ----------
+func _use_r() -> void:
+	r_cd = r_cd_max   # تبريد ثابت 60ث (مش متأثر بـ Focus)
+	match sig:
+		"rifle":
+			r_buff_t = 5.0
+			_flash_msg(T("HEAVY MACHINE GUN!"), 1.6)
+			shake = maxf(shake, 4.0)
+			Audio.play_sfx("boss", -8.0, 1.2, 1.3)
+		"firebolt":
+			r_buff_t = 7.0
+			_flash_msg(T("INFERNO OVERLOAD!"), 1.6)
+			Audio.play_sfx("explode", -6.0, 1.1, 1.25)
+		"spinblade":
+			r_buff_t = 5.0
+			_flash_msg(T("GIANT BLADE!"), 1.6)
+			Audio.play_sfx("boss", -8.0, 0.9, 1.0)
+		"shockwave":
+			_cataclysm()
+		"dice":
+			_fate_gamble()
+		"crescent":
+			_judgement_rift()
+
+# Soldier — Heavy Machine Gun: رشقة سريعة جداً (تُستدعى من _fire_step أثناء r_buff_t)
+func _hmg_fire() -> void:
+	var ni := _nearest_enemy()
+	if ni < 0:
+		return
+	var dir := (Vector2(enemies[ni]["pos"]) - pp).normalized().rotated(rng.randf_range(-0.05, 0.05))
+	bullets.append({"pos": pp, "vel": dir * bullet_speed * 1.15, "life": 1.0, "pierce": pierce + 1, "bounce": 0,
+		"side": false, "exec": false, "rult": true, "dmg": bullet_dmg * 1.5 * _sigm()})
+	Audio.play_sfx("shoot", -16.0, 1.1, 1.25)
+
+# Knight — Giant Blade: أرجوحة سيف عملاق (قوس عريض ~160°، مدى كبير) أثناء r_buff_t
+func _giant_blade() -> void:
+	var ni := _nearest_enemy()
+	if ni < 0:
+		return
+	var ang := (Vector2(enemies[ni]["pos"]) - pp).angle()
+	var reach := 165.0 * _area()
+	var half := deg_to_rad(80.0)
+	var dmg := bullet_dmg * 2.6 * _sigm()
+	var reach2 := reach * reach
+	for i in range(enemies.size() - 1, -1, -1):
+		var e = enemies[i]
+		var to := Vector2(e["pos"]) - pp
+		var rr := reach + float(e["r"])
+		if to.length_squared() > rr * rr:
+			continue
+		if absf(wrapf(to.angle() - ang, -PI, PI)) <= half:
+			var isb := String(e["type"]) == "boss"
+			damage_enemy(i, dmg * (0.5 if isb else 1.0), "slash")
+	slash_fx.append({"pos": Vector2(pp), "ang": ang, "arc": half, "reach": reach, "life": 0.24, "max": 0.24, "giant": true})
+	shake = maxf(shake, 2.0)
+	Audio.play_sfx("hit", -6.0, 0.75, 0.9)
+
+# Titan — Cataclysm Shockwave: كارثة فورية — تمسح العادي، تدفع النخبة، الزعيم ~27%
+func _cataclysm() -> void:
+	var R := 300.0 * _area()
+	hitstop = maxf(hitstop, 0.12)
+	shake = maxf(shake, 12.0)
+	flash = minf(flash + 0.3, 0.7)
+	_flash_msg(T("CATACLYSM SHOCKWAVE!"), 1.7)
+	Audio.play_sfx("explode", -2.0, 0.5, 0.6)
+	if rings.size() < 26:
+		rings.append({"pos": Vector2(pp), "t": 0.0, "max": R, "col": Color(0.9, 0.7, 0.35)})
+		rings.append({"pos": Vector2(pp), "t": 0.0, "max": R * 0.6, "col": Color(1.0, 0.85, 0.5)})
+	for k in 22:
+		var a := rng.randf() * TAU
+		var d := rng.randf_range(30.0, R)
+		parts.append({"pos": pp + Vector2(cos(a), sin(a)) * d, "vel": Vector2(cos(a), sin(a)) * rng.randf_range(40, 120),
+			"life": rng.randf_range(0.4, 0.9), "sz": rng.randf_range(3, 7), "col": Color(0.7, 0.6, 0.45, 0.9)})
+	var big := bullet_dmg * 4.0 * _sigm()
+	var r2 := R * R
+	for i in range(enemies.size() - 1, -1, -1):
+		var e = enemies[i]
+		var dv := Vector2(e["pos"]) - pp
+		var rr := R + float(e["r"])
+		if dv.length_squared() > rr * rr:
+			continue
+		var et := String(e["type"])
+		if et == "boss":
+			damage_enemy(i, big * 0.27, "rult")
+		elif et == "elite":
+			if dv.length() > 0.01:
+				e["pos"] = Vector2(e["pos"]) + dv.normalized() * 120.0
+			damage_enemy(i, big * 0.9, "rult")
+		else:
+			if dv.length() > 0.01:
+				e["pos"] = Vector2(e["pos"]) + dv.normalized() * 70.0
+			damage_enemy(i, big, "rult")
+
+# Gambler — Fate Gamble: 50% بركة +40% ضرر / 50% لعنة -40% لمدة 30ث (بلا تراكم)
+func _fate_gamble() -> void:
+	_toast(T("FATE GAMBLE!"), 1.2)
+	r_fate_good = rng.randf() < 0.5
+	r_fate_mul = 1.4 if r_fate_good else 0.6
+	r_fate_t = 30.0
+	if r_fate_good:
+		_flash_msg(T("FATE BLESSING! +40% DMG (30s)"), 2.0)
+		_burst(pp, Balance.COL_REWARD, 24)
+		if rings.size() < 26:
+			rings.append({"pos": Vector2(pp), "t": 0.0, "max": 170.0, "col": Balance.COL_REWARD})
+		Audio.play_sfx("levelup", 0.0, 1.2, 1.3)
+	else:
+		_flash_msg(T("FATE CURSE! -40% DMG (30s)"), 2.0)
+		flash = minf(flash + 0.4, 0.7)
+		Audio.play_sfx("hurt", -2.0, 0.7, 0.8)
+
 # Shadow Assault الجاري: يقفز على الأهداف واحداً واحداً ويقطع (حصانة محفوظة أثناءه)
 func _shadow_assault_step(dt: float) -> void:
 	if sassault == null:
@@ -4608,6 +4754,18 @@ func _rift_step(dt: float) -> void:
 
 func _fire_step(dt: float) -> void:
 	fire_cd -= dt
+	# v1.2.5: Soldier Heavy Machine Gun — رشقة سريعة جداً أثناء الأولتيمت
+	if sig == "rifle" and r_buff_t > 0.0:
+		if fire_cd <= 0.0 and enemies.size() > 0:
+			_hmg_fire()
+			fire_cd = 0.05
+		return
+	# v1.2.5: Knight Giant Blade — أرجوحات ضخمة أثناء الأولتيمت
+	if sig == "spinblade" and r_buff_t > 0.0:
+		if fire_cd <= 0.0 and enemies.size() > 0:
+			_giant_blade()
+			fire_cd = 0.35
+		return
 	# v1.2: سلاح التوقيع بيحدد "الرماية" — Titan موجات، والهالة/الداش/السيوف بلا رصاص
 	if sig == "shockwave":
 		if fire_cd <= 0.0 and enemies.size() > 0:
@@ -4691,14 +4849,21 @@ func _bullet_step(dt: float) -> void:
 					bsrc = "side"
 				if bool(b.get("exec", false)):
 					bd *= 1.5 if eb else 2.0
-				# Pyromancer Fire Bolt: كل إصابة تكوّم Burn + كل 3 إصابات = انفجار صغير
+				# Pyromancer Fire Bolt: كل إصابة تكوّم Burn + كل 3 إصابات = انفجار (Inferno: كل طلقة تنفجر)
 				var firebolt := bool(b.get("firebolt", false))
+				var infernal := bool(b.get("infernal", false))
 				var hitpos := Vector2(e["pos"])
+				if bool(b.get("rult", false)) and eb:
+					bd *= 0.5   # Heavy Machine Gun ضد الزعماء
 				if firebolt:
 					bsrc = "firebolt"
 					_ignite(e, 1)
 				damage_enemy(j, bd, bsrc)
-				if firebolt:
+				if infernal:
+					_fire_explosion(hitpos, 80.0, bullet_dmg * 1.15 * _sigm(), 1)   # ~60% من قوة Fireball الـ Q
+					if fire_patches.size() < 46 and rng.randf() < 0.5:
+						fire_patches.append({"pos": hitpos, "life": 2.5})
+				elif firebolt:
 					fbolt_hits += 1
 					if fbolt_hits % 3 == 0:
 						_fire_explosion(hitpos, 62.0, bullet_dmg * 0.85 * _sigm(), 1)
@@ -4901,34 +5066,34 @@ func _all_in_roll() -> void:
 		1:  # كارثة: -20% من صحتك الحالية (عمرها ما تقتلك مباشرة)
 			hp = maxf(1.0, hp - hp * 0.20)
 			flash = minf(1.0, flash + 0.6)
-			_flash_msg(T("CURSED ROLL!"), 1.8)
+			_flash_msg(T("CURSED ROLL! -20% HP"), 1.8)
 			Audio.play_sfx("hurt", 0.0, 0.6, 0.65)
 		2:
 			g_dmg_mul = 0.85
 			g_dmg_t = 8.0
-			_flash_msg(T("BAD ROLL!"), 1.5)
+			_flash_msg(T("BAD ROLL! -15% DMG (8s)"), 1.6)
 			Audio.play_sfx("hurt", -6.0, 0.8, 0.85)
 		3:
 			g_dmg_mul = 1.15
 			g_dmg_t = 8.0
-			_flash_msg(T("LUCKY HIT!"), 1.5)
+			_flash_msg(T("LUCKY HIT! +15% DMG (8s)"), 1.6)
 			Audio.play_sfx("gem", -4.0, 1.0, 1.1)
 		4:
 			g_crit_add = 0.25
 			g_crit_t = 10.0
-			_flash_msg(T("GOOD ROLL!"), 1.5)
+			_flash_msg(T("GOOD ROLL! +25% CRIT (10s)"), 1.6)
 			Audio.play_sfx("gem", -3.0, 1.1, 1.2)
 		5:
 			g_dmg_mul = 1.40
 			g_dmg_t = 8.0
 			g_crit_add = 0.20
 			g_crit_t = 8.0
-			_flash_msg(T("BIG WIN!"), 1.7)
+			_flash_msg(T("BIG WIN! +40% DMG +20% CRIT (8s)"), 1.8)
 			Audio.play_sfx("levelup", -3.0, 1.1, 1.2)
 		6:  # جاكبوت: كل الضربات كريت 5 ثواني
 			g_crit_add = 1.0
 			g_crit_t = 5.0
-			_flash_msg(T("JACKPOT!"), 2.0)
+			_flash_msg(T("JACKPOT! ALL CRITS (5s)"), 2.0)
 			_burst(pp, Balance.COL_REWARD, 26)
 			if rings.size() < 26:
 				rings.append({"pos": Vector2(pp), "t": 0.0, "max": 180.0, "col": Balance.COL_REWARD})
@@ -6414,8 +6579,8 @@ func _update_hud() -> void:
 	else:
 		lbl_q.text = "[Q] %.1fs" % q_cd
 		lbl_q.add_theme_color_override("font_color", Color(0.55, 0.58, 0.66))
-	# v1.2.3: مؤشر الأولتيمت R — الشينوبي فقط (مقفول قبل Level 7)
-	if sig == "crescent":
+	# v1.2.3/1.2.5: مؤشر الأولتيمت R — كل الشخصيات (مقفول قبل Level 7)
+	if CHARS[char_sel].has("rname"):
 		lbl_r.visible = true
 		var runlock := int(CHARS[char_sel].get("runlock", 7))
 		if level < runlock:
@@ -6429,6 +6594,24 @@ func _update_hud() -> void:
 			lbl_r.add_theme_color_override("font_color", Color(0.55, 0.58, 0.66))
 	else:
 		lbl_r.visible = false
+	# v1.2.5: مؤشر حالة مؤقتة (بافات المقامر / القدر) مع عدّاد
+	var stx := ""
+	var good := true
+	if r_fate_t > 0.0:
+		good = r_fate_good
+		stx = ("FATE +40%% (%ds)" % int(ceil(r_fate_t))) if r_fate_good else ("FATE -40%% (%ds)" % int(ceil(r_fate_t)))
+	elif g_dmg_t > 0.0 and absf(g_dmg_mul - 1.0) > 0.01:
+		good = g_dmg_mul >= 1.0
+		stx = "DMG %+d%% (%ds)" % [int(round((g_dmg_mul - 1.0) * 100.0)), int(ceil(g_dmg_t))]
+	elif g_crit_t > 0.0 and g_crit_add > 0.0:
+		good = true
+		stx = "CRIT +%d%% (%ds)" % [int(round(g_crit_add * 100.0)), int(ceil(g_crit_t))]
+	if stx != "":
+		lbl_status.visible = true
+		lbl_status.text = stx
+		lbl_status.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5) if good else Color(1.0, 0.5, 0.4))
+	else:
+		lbl_status.visible = false
 
 # ================================================================
 #  DRAW
@@ -6877,9 +7060,10 @@ func _draw() -> void:
 		var sang: float = sx["ang"]
 		var sarc: float = sx["arc"]
 		var srch: float = float(sx["reach"]) * (0.85 + 0.15 * (1.0 - sl))
-		var scol := Color(0.75, 0.98, 0.85, sl * 0.8)
-		draw_arc(Vector2(sx["pos"]), srch, sang - sarc, sang + sarc, 22, scol, 4.0 * sl + 1.0)
-		draw_arc(Vector2(sx["pos"]), srch * 0.7, sang - sarc, sang + sarc, 18, Color(1, 1, 1, sl * 0.5), 2.0)
+		var giant := bool(sx.get("giant", false))
+		var scol := (Color(1.0, 0.88, 0.4, sl * 0.9) if giant else Color(0.75, 0.98, 0.85, sl * 0.8))
+		draw_arc(Vector2(sx["pos"]), srch, sang - sarc, sang + sarc, 28, scol, (7.0 if giant else 4.0) * sl + 1.0)
+		draw_arc(Vector2(sx["pos"]), srch * 0.7, sang - sarc, sang + sarc, 22, Color(1, 1, 1, sl * 0.55), (3.0 if giant else 2.0))
 	# v1.2.3: كرات Fireball الطايرة (Pyromancer Q)
 	for fb in fireballs:
 		var fbp: Vector2 = fb["pos"]
@@ -6956,6 +7140,35 @@ func _draw() -> void:
 		# Berserk الفارس: هالة ذهبية نابضة
 		if berserk_t > 0.0:
 			draw_arc(pp, PR + 12.0 + sin(animt * 12.0) * 3.0, 0, TAU, 24, Color(1.0, 0.75, 0.2, 0.7), 2.5)
+		# v1.2.5: مرئيات الأولتيمت النشط
+		if r_buff_t > 0.0:
+			var _rdir := (pvel.normalized() if pvel.length() > 20.0 else Vector2.RIGHT)
+			var _tn := _nearest_enemy()
+			if _tn >= 0:
+				_rdir = (Vector2(enemies[_tn]["pos"]) - pp).normalized()
+			if sig == "rifle":
+				# رشاش ثقيل: سبطانة عريضة + وميض فوهة
+				draw_set_transform(pp, _rdir.angle(), Vector2.ONE)
+				draw_rect(Rect2(2, -5, 34, 10), Color(0.2, 0.22, 0.26))
+				draw_rect(Rect2(2, -3, 30, 6), Color(0.45, 0.48, 0.55))
+				if fmod(animt, 0.1) < 0.05:
+					draw_circle(Vector2(38, 0), 6.0, Color(1.0, 0.85, 0.4, 0.9))
+				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			elif sig == "firebolt":
+				# طوفان الجحيم: هالة نار نابضة + جمرات
+				draw_circle(pp, PR + 16.0 + sin(animt * 14.0) * 4.0, Color(1.0, 0.4, 0.1, 0.18))
+				draw_arc(pp, PR + 14.0, 0, TAU, 26, Color(1.0, 0.6, 0.2, 0.7), 2.5)
+				for _ei in 5:
+					var _ea := animt * 3.0 + TAU * float(_ei) / 5.0
+					draw_circle(pp + Vector2(cos(_ea), sin(_ea)) * (PR + 18.0), 2.5, Color(1.0, 0.75, 0.3, 0.8))
+			elif sig == "spinblade":
+				# سيف عملاق ممسوك ناحية الهدف
+				draw_set_transform(pp, _rdir.angle(), Vector2.ONE)
+				draw_colored_polygon(PackedVector2Array([Vector2(8, -8), Vector2(78, -5), Vector2(96, 0), Vector2(78, 5), Vector2(8, 8)]), Balance.COL_INK)
+				draw_colored_polygon(PackedVector2Array([Vector2(10, -6), Vector2(78, -3.5), Vector2(90, 0), Vector2(78, 3.5), Vector2(10, 6)]), Color(0.8, 0.86, 1.0))
+				draw_line(Vector2(12, 0), Vector2(86, 0), Color(1, 1, 1, 0.8), 1.5)
+				draw_rect(Rect2(2, -12, 6, 24), Color(0.55, 0.42, 0.22))
+				draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		# نتيجة All In Roll: نرد بيلف فوق اللاعب + نقاط النتيجة
 		if roll_anim_t > 0.0:
 			var ra4 := clampf(roll_anim_t / 1.6, 0.0, 1.0)

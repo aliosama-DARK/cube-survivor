@@ -1,5 +1,33 @@
 # Cube Survivor — Changelog
 
+## v1.2.5 (2026-07) — Ultimate R for Every Character
+- **Every survivor now has an R Ultimate** — unlocks at **Level 7**, fixed
+  **60s cooldown**, only fires during gameplay (never in pause/menus/level-up,
+  so no conflict with the level-up reroll which is also R). HUD shows
+  Locked (`[R] R Locked (Lv7)`) → Ready (gold) → Cooldown countdown. All R
+  damage is reduced vs bosses so none of them is a win button.
+- **Soldier — Heavy Machine Gun** (5s): a giant machine gun with huge fire rate
+  and damage toward the nearest foe; Soldier moves ~18% slower while firing.
+  Halved vs bosses. Text: HEAVY MACHINE GUN!
+- **Pyromancer — Inferno Overload** (7s): every basic shot becomes an exploding
+  mini-fireball (~60% of Q Fireball power) that ignites the ground. Reduced vs
+  bosses. Text: INFERNO OVERLOAD!
+- **Knight — Giant Blade** (5s): swings one huge sword — fast, heavy, wide
+  cleaving arcs; ~10% slower while active. Halved vs bosses. Text: GIANT BLADE!
+- **Titan — Cataclysm Shockwave** (instant): smashes the ground for a huge
+  blast — clears commons, deals heavy damage + strong knockback to elites,
+  bosses take ~27%. Cracks, dust, shake. Text: CATACLYSM SHOCKWAVE!
+- **Gambler — Fate Gamble** (instant): rolls fate — 50% **+40% damage** for 30s
+  or 50% **-40% damage** for 30s (no stacking). Clear result text + a 30s
+  status timer in the HUD. Text: FATE GAMBLE!
+- **Shinobi — Judgement Rift** (from v1.2.3): multi-hit shadow slashes across a
+  wide area, invulnerable only during the cast, boss-limited.
+- **Gambler Q feedback fixed** — All In Roll now spells out the exact result
+  (name + stat + % + duration, e.g. `BIG WIN! +40% DMG +20% CRIT (8s)`), and a
+  small green/red status timer tracks the active buff/debuff.
+- Character-select panels show a short `R — [Name] (Lv7, 60s)` line for every
+  character (no overflow).
+
 ## v1.2.3 (2026-07) — Pyromancer & Shinobi Ultimate Rework
 - **Fire Aura is now the Pyromancer (Fire Mage)** — the awkward "stand-in-danger
   aura" is gone. Save migration keeps the unlock (old `Fire Aura`/`Burner` saves
