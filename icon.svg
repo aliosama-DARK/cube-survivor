@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#132234"/>
+      <stop offset="1" stop-color="#0B1420"/>
+    </linearGradient>
+    <linearGradient id="cubeTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8FD3FF"/>
+      <stop offset="1" stop-color="#4FA0FF"/>
+    </linearGradient>
+    <linearGradient id="cubeLeft" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2F7BFF"/>
+      <stop offset="1" stop-color="#1E56C0"/>
+    </linearGradient>
+    <linearGradient id="cubeRight" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#245FCE"/>
+      <stop offset="1" stop-color="#173F8C"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2F7BFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#2F7BFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+  </defs>
+
+  <!-- arena tile -->
+  <rect x="2" y="2" width="124" height="124" rx="22" fill="url(#bg)" stroke="#1E3350" stroke-width="3"/>
+
+  <!-- faint digital grid -->
+  <g stroke="#2F7BFF" stroke-opacity="0.10" stroke-width="1">
+    <path d="M64 12 L118 64 L64 116 L10 64 Z"/>
+    <path d="M64 30 L100 64 L64 98 L28 64 Z"/>
+    <line x1="10" y1="64" x2="118" y2="64"/>
+    <line x1="64" y1="12" x2="64" y2="116"/>
+  </g>
+
+  <!-- player glow -->
+  <circle cx="64" cy="66" r="42" fill="url(#glow)"/>
+
+  <!-- danger pips (red) at arena corners -->
+  <g fill="#E84A5F">
+    <rect x="16" y="16" width="7" height="7" rx="2"/>
+    <rect x="105" y="105" width="7" height="7" rx="2"/>
+  </g>
+  <!-- reward gem (gold) accent -->
+  <g transform="translate(102 22)">
+    <path d="M0 -7 L6 0 L0 7 L-6 0 Z" fill="#FFD166"/>
+    <path d="M0 -7 L6 0 L0 0 Z" fill="#FFE3A0"/>
+  </g>
+
+  <!-- isometric player cube (focal point) -->
+  <g filter="url(#soft)" opacity="0.35">
+    <path d="M64 30 L96 48 L64 66 L32 48 Z" fill="#2F7BFF"/>
+  </g>
+  <g stroke="#0B1420" stroke-width="2" stroke-linejoin="round">
+    <path d="M64 30 L96 48 L64 66 L32 48 Z" fill="url(#cubeTop)"/>
+    <path d="M32 48 L64 66 L64 100 L32 82 Z" fill="url(#cubeLeft)"/>
+    <path d="M96 48 L64 66 L64 100 L96 82 Z" fill="url(#cubeRight)"/>
+  </g>
+  <!-- top highlight edge -->
+  <path d="M64 34 L90 48 L64 62" fill="none" stroke="#CDEBFF" stroke-width="2" stroke-opacity="0.7" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
