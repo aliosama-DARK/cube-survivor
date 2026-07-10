@@ -158,20 +158,20 @@ const SYNERGIES := [
 # --- الثيمات/المراحل (Stages) ---
 const THEMES := [
 	{"name": "Meadow", "bg": Color(0.11, 0.17, 0.12), "grid": Color(0.14, 0.22, 0.14),
-	 "decor": Color(0.16, 0.30, 0.17), "boss_col": Color(0.15, 0.65, 0.25), "boss_name": "Meadow Warden",
+	 "decor": Color(0.16, 0.30, 0.17), "boss_col": Color(0.30, 0.75, 0.35), "boss_name": "Verdant Colossus",
 	 "pal": [Color(0.85, 0.38, 0.30), Color(0.82, 0.58, 0.24), Color(0.62, 0.36, 0.75), Color(0.55, 0.42, 0.30)]},
 	{"name": "Desert", "bg": Color(0.22, 0.17, 0.12), "grid": Color(0.26, 0.20, 0.14),
-	 "decor": Color(0.40, 0.33, 0.22), "boss_col": Color(0.92, 0.89, 0.78), "boss_name": "Bone King",
+	 "decor": Color(0.55, 0.30, 0.22), "boss_col": Color(0.92, 0.28, 0.16), "boss_name": "Crimson Forge Core",
 	 "pal": [Color(0.80, 0.42, 0.18), Color(0.62, 0.32, 0.22), Color(0.88, 0.66, 0.26), Color(0.50, 0.26, 0.12)],
 	 "bone": true},
 	{"name": "Glacier", "bg": Color(0.15, 0.20, 0.27), "grid": Color(0.22, 0.29, 0.38),
-	 "decor": Color(0.46, 0.56, 0.68), "boss_col": Color(0.20, 0.75, 0.90), "boss_name": "Frost Heart",
+	 "decor": Color(0.46, 0.56, 0.68), "boss_col": Color(0.35, 0.80, 0.98), "boss_name": "Frost Spire",
 	 "pal": [Color(0.30, 0.52, 0.82), Color(0.48, 0.75, 0.92), Color(0.22, 0.38, 0.65), Color(0.70, 0.82, 0.98)]},
 	{"name": "Volcano", "bg": Color(0.16, 0.07, 0.06), "grid": Color(0.20, 0.09, 0.07),
-	 "decor": Color(0.80, 0.34, 0.10), "boss_col": Color(0.90, 0.20, 0.10), "boss_name": "Magma Beast",
+	 "decor": Color(0.95, 0.72, 0.28), "boss_col": Color(0.98, 0.78, 0.28), "boss_name": "Solar Relic",
 	 "pal": [Color(0.88, 0.24, 0.14), Color(0.95, 0.52, 0.14), Color(0.62, 0.18, 0.18), Color(0.95, 0.76, 0.24)]},
 	{"name": "The Void", "bg": Color(0.05, 0.04, 0.08), "grid": Color(0.12, 0.10, 0.20),
-	 "decor": Color(0.58, 0.42, 0.80), "boss_col": Color(0.65, 0.25, 0.90), "boss_name": "Void Shade",
+	 "decor": Color(0.58, 0.42, 0.80), "boss_col": Color(0.72, 0.35, 0.98), "boss_name": "Core Entity",
 	 "pal": [Color(0.56, 0.30, 0.82), Color(0.78, 0.36, 0.88), Color(0.36, 0.26, 0.62), Color(0.86, 0.56, 0.95)]},
 ]
 

@@ -1,5 +1,26 @@
 # Cube Survivor — Changelog
 
+## v1.2.7 (2026-07) — Visual Identity Pass (from concept sheets)
+- **Characters** — each hero now reads at a glance with a distinct emblem set,
+  driven by the concept sheets:
+  - **Soldier**: olive tactical helmet dome + metal rifle barrel.
+  - **Pyromancer**: brown furnace lid + a lit side torch on a pipe arm.
+  - **Shinobi**: dark mask + cyan eye + flowing scarf + a gold katana hilt.
+  - **Knight**: blue plume crest + dark visor + gold-cross shield.
+  - **Titan**: glowing orange cracks + a massive stone hammer.
+  - **Gambler**: black dice pips + bright blue dice-core (unchanged, on-model).
+- **Bosses** — renamed and recolored to the concept identities:
+  Meadow Warden → **Verdant Colossus**, Bone King → **Crimson Forge Core**
+  (skull replaced by a red mechanical forge-core with bolt studs),
+  Frost Heart → **Frost Spire**, Magma Beast → **Solar Relic** (now gold to
+  match the Golden Collapse floor), Void Shade → **Core Entity**. Every boss now
+  shows a pulsing central **core gem**, unifying them with the cube-core look.
+- **Stages** — boss bullet/aura colors realigned to each stage's palette
+  (Crimson Pressure boss is red, Golden Collapse boss is gold) so bosses and
+  floors read as one world. (Stage floors were already on-model.)
+- Note: these are code-drawn procedural upgrades in the cube-art style, not the
+  illustrated concept sheets — tuned for gameplay readability and 60+fps.
+
 ## v1.2.6 (2026-07) — Blessing Cleanup, Power Pass & Character Fixes
 - **Base health regen for everyone** — every survivor now regenerates **1 HP/s
   at all times** (during stages and boss fights, after being hit, while moving

@@ -6,7 +6,7 @@ extends Node2D
 # ============================================================
 
 const DBG_INPUT := false
-const GAME_VERSION := "v1.2.6"
+const GAME_VERSION := "v1.2.7"
 # لقطات الشاشة للتطوير: تُفعَّل عبر سطر الأوامر:  godot --path . -- --shot=<scene> [--shotout=<path>]
 # المشاهد: menu | menu_ar | settings | play | boss | levelup | lang | cover
 var SHOTMODE := false
@@ -6579,12 +6579,15 @@ func _gen_sprites() -> void:
 				return true
 		return false)
 	SPR["boss1"] = _shape_tex(26, func(p: Vector2) -> bool:
-		# جمجمة عظام: رأس دائري + فك + عيون مفرّغة
-		if (p + Vector2(3.2, 1.8)).length() < 2.1 or (p - Vector2(3.2, -1.8)).length() < 2.1:
-			return false   # عيون
-		if p.length() < 8.6 and p.y < 4.0:
-			return true    # الرأس
-		return absf(p.x) < 5.2 and p.y >= 4.0 and p.y < 9.5 and absf(fposmod(p.x + 6.0, 3.0) - 1.5) > 0.4)
+		# Crimson Forge Core: جسم مثمّن معدني + مسامير حول المحيط + قلب مفرّغ
+		var d := p.length()
+		for k in 8:
+			var a := TAU * float(k) / 8.0
+			if (p - Vector2(cos(a), sin(a)) * 8.6).length() < 2.6:
+				return true   # مسمار/ترس
+		if absf(p.x) < 8.0 and absf(p.y) < 8.0 and absf(p.x) + absf(p.y) < 11.6:
+			return d > 2.8   # القلب مفرّغ (بيبان من خلاله التوهّج)
+		return false)
 	SPR["boss2"] = _shape_tex(26, func(p: Vector2) -> bool:
 		return absf(p.x) < 9.5 and absf(p.x) * 0.5 + absf(p.y) * 0.9 < 9.8)
 	SPR["boss3"] = _shape_tex(26, func(p: Vector2) -> bool:
@@ -7604,37 +7607,55 @@ func _draw_hero(pos: Vector2, idx: int, s: float, alpha: float, player := false)
 	if player:
 		draw_rect(Rect2(pos.x - s * 0.30, pos.y - s * 0.30, s * 0.60, s * 0.60), Color(Balance.COL_YOU_HI.r, Balance.COL_YOU_HI.g, Balance.COL_YOU_HI.b, alpha * 0.9))
 	match idx:
-		0:  # Soldier: ماسورة بندقية + نقطة تصويب
+		0:  # Soldier: helmet dome + rifle
+			var hcol := Color(0.34, 0.40, 0.24, alpha)
+			draw_colored_polygon(PackedVector2Array([
+				Vector2(pos.x - s * 0.6, pos.y - s * 0.3), Vector2(pos.x - s * 0.4, pos.y - s * 0.72),
+				Vector2(pos.x + s * 0.4, pos.y - s * 0.72), Vector2(pos.x + s * 0.6, pos.y - s * 0.3)]), hcol)
+			draw_rect(Rect2(pos.x - s * 0.62, pos.y - s * 0.34, s * 1.24, s * 0.12), hcol.darkened(0.25))
 			var sdir := (pvel.normalized() if player and pvel.length() > 30.0 else Vector2.RIGHT)
-			draw_line(pos + sdir * s * 0.4, pos + sdir * (s + 8.0), Color(acc2.r, acc2.g, acc2.b, alpha), 3.0)
-			draw_circle(pos + sdir * (s + 11.0), 1.8, Color(1, 1, 1, alpha * 0.8))
-		1:  # Pyromancer: ألسنة لهب فوق الرأس
-			for k in 3:
-				var fx := pos.x - s * 0.55 + s * 0.55 * k
-				var fh := s * (0.55 + 0.25 * sin(animt * 7.0 + k * 2.0))
-				draw_colored_polygon(PackedVector2Array([
-					Vector2(fx - s * 0.18, pos.y - s), Vector2(fx + s * 0.18, pos.y - s),
-					Vector2(fx, pos.y - s - fh)]), Color(1.0, 0.55, 0.15, alpha))
-		2:  # Shinobi: قناع نينجا داكن + عين واحدة خضرا مضيئة + وشاح مرفرف
-			# القناع: حزام أغمق فوق منتصف الوش
+			draw_line(pos + sdir * s * 0.4, pos + sdir * (s + 9.0), Color(0.32, 0.34, 0.38, alpha), 4.0)
+			draw_line(pos + sdir * s * 0.4, pos + sdir * (s + 9.0), Color(0.55, 0.58, 0.64, alpha), 1.6)
+			draw_circle(pos + sdir * (s + 11.0), 1.8, Color(1, 0.85, 0.4, alpha))
+		1:  # Pyromancer: furnace lid + side torch
+			draw_rect(Rect2(pos.x - s * 0.5, pos.y - s * 0.82, s * 1.0, s * 0.3), Color(0.40, 0.28, 0.18, alpha))
+			draw_rect(Rect2(pos.x - s * 0.5, pos.y - s * 0.82, s * 1.0, s * 0.09), Color(0.54, 0.39, 0.24, alpha))
+			var tdir := (pvel.normalized() if player and pvel.length() > 30.0 else Vector2.RIGHT)
+			var tp := pos + tdir * (s * 0.85)
+			draw_line(pos + tdir * s * 0.3, tp, Color(0.48, 0.36, 0.22, alpha), 3.0)
+			var fh := s * (0.5 + 0.22 * sin(animt * 9.0))
+			draw_colored_polygon(PackedVector2Array([tp + Vector2(-s * 0.2, 0), tp + Vector2(s * 0.2, 0), tp + Vector2(0, -fh)]), Color(1.0, 0.55, 0.15, alpha))
+			draw_colored_polygon(PackedVector2Array([tp + Vector2(-s * 0.1, 0), tp + Vector2(s * 0.1, 0), tp + Vector2(0, -fh * 0.6)]), Color(1.0, 0.9, 0.5, alpha))
+		2:  # Shinobi: dark mask + cyan eye + scarf + katana hilt
 			draw_rect(Rect2(pos.x - s * 0.72, pos.y - s * 0.42, s * 1.44, s * 0.36), Color(0.08, 0.10, 0.12, alpha))
-			# عين واحدة (يمين) بلمعة
 			draw_rect(Rect2(pos.x + s * 0.02, pos.y - s * 0.36, s * 0.42, s * 0.24), Color(acc2.r, acc2.g, acc2.b, alpha))
 			draw_rect(Rect2(pos.x + s * 0.06, pos.y - s * 0.33, s * 0.14, s * 0.10), Color(1, 1, 1, alpha * 0.9))
-			# وشاح خلفه بيرفرف
+			draw_line(pos + Vector2(-s * 0.15, s * 0.1), pos + Vector2(-s * 0.75, -s * 0.5), Color(0.75, 0.6, 0.3, alpha), 2.5)
 			var scx := pos + Vector2(-s * 0.95 - sin(animt * 7.0) * 3.0, s * 0.05 + cos(animt * 5.0) * 1.5)
 			draw_rect(Rect2(scx.x - s * 0.5, scx.y - s * 0.12, s * 0.55, s * 0.24), Color(acc2.r, acc2.g, acc2.b, alpha * 0.75))
-		3:  # Knight: سيفان دوّاران واضحان (سلاح توقيعه) — الرسم الفعلي في _draw عبر orbit
-			draw_rect(Rect2(pos.x - s * 0.5, pos.y - s * 0.28, s * 1.0, s * 0.16), Color(acc2.r, acc2.g, acc2.b, alpha * 0.9))
-		4:  # Titan: صفيحتا درع أفقيتان
-			draw_rect(Rect2(pos.x - s * 0.7, pos.y - s * 0.34, s * 1.4, s * 0.22), Color(0.85, 0.88, 0.95, alpha))
-			draw_rect(Rect2(pos.x - s * 0.7, pos.y + s * 0.12, s * 1.4, s * 0.22), Color(0.72, 0.75, 0.85, alpha))
-		5:  # Gambler: نقاط نرد (pips) غامقة على الجسم — قلب النرد المضيء هو الـ core الأزرق
+		3:  # Knight: blue plume + visor + shield with gold cross
+			for k in 3:
+				var px := pos.x - s * 0.14 + float(k) * s * 0.13
+				draw_rect(Rect2(px, pos.y - s * 0.85 + sin(animt * 5.0 + float(k)) * 1.5, s * 0.10, s * 0.42), Color(0.28, 0.5, 0.95, alpha))
+			draw_rect(Rect2(pos.x - s * 0.5, pos.y - s * 0.28, s * 1.0, s * 0.14), Color(0.18, 0.2, 0.26, alpha))
+			var shx := pos + Vector2(-s * 0.72, s * 0.06)
+			draw_rect(Rect2(shx.x - s * 0.16, shx.y - s * 0.28, s * 0.32, s * 0.56), Color(0.28, 0.4, 0.72, alpha))
+			draw_rect(Rect2(shx.x - s * 0.05, shx.y - s * 0.18, s * 0.10, s * 0.36), Color(0.92, 0.75, 0.28, alpha))
+			draw_rect(Rect2(shx.x - s * 0.14, shx.y - s * 0.05, s * 0.28, s * 0.10), Color(0.92, 0.75, 0.28, alpha))
+		4:  # Titan: glowing cracks + massive stone hammer
+			draw_line(pos + Vector2(-s * 0.32, -s * 0.5), pos + Vector2(s * 0.08, s * 0.45), Color(1.0, 0.55, 0.15, alpha * 0.85), 2.0)
+			draw_line(pos + Vector2(s * 0.4, -s * 0.35), pos + Vector2(s * 0.15, s * 0.15), Color(1.0, 0.6, 0.2, alpha * 0.7), 1.6)
+			var hdir := (pvel.normalized() if player and pvel.length() > 30.0 else Vector2.LEFT)
+			var hp := pos + hdir * (s * 0.95)
+			draw_line(pos, hp, Color(0.46, 0.36, 0.22, alpha), 3.5)
+			draw_rect(Rect2(hp.x - s * 0.34, hp.y - s * 0.34, s * 0.68, s * 0.68), Color(0.30, 0.33, 0.40, alpha))
+			draw_rect(Rect2(hp.x - s * 0.34, hp.y - s * 0.34, s * 0.68, s * 0.14), Color(0.5, 0.53, 0.6, alpha))
+		5:  # Gambler: black pips + bright blue dice core
 			var pipc := Color(0.10, 0.10, 0.14, alpha)
-			draw_circle(pos + Vector2(-s * 0.5, -s * 0.5), s * 0.16, pipc)
-			draw_circle(pos + Vector2(s * 0.5, s * 0.5), s * 0.16, pipc)
-			draw_circle(pos + Vector2(s * 0.5, -s * 0.5), s * 0.16, pipc)
-			draw_circle(pos + Vector2(-s * 0.5, s * 0.5), s * 0.16, pipc)
+			draw_circle(pos + Vector2(-s * 0.5, -s * 0.5), s * 0.17, pipc)
+			draw_circle(pos + Vector2(s * 0.5, s * 0.5), s * 0.17, pipc)
+			draw_circle(pos + Vector2(s * 0.5, -s * 0.5), s * 0.17, pipc)
+			draw_circle(pos + Vector2(-s * 0.5, s * 0.5), s * 0.17, pipc)
 
 func _poly(c: Vector2, r: float, n: int, rot: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()
@@ -7866,6 +7887,14 @@ func _draw_boss(e: Dictionary) -> void:
 	if bhf > 0.0:
 		tint = tint.lerp(Color(1, 1, 1), clampf(bhf / 0.09, 0.0, 1.0) * 0.7)
 	draw_texture_rect(SPR["boss%d" % mini(kind, 5)], Rect2(ep.x - sz * 0.5, ep.y - sz * 0.5, sz, sz), false, tint)
+	# v1.2.6: قلب متوهّج مركزي يوحّد البوسات (زي مراجع الـ concept) — عدا الملك
+	if kind < 5:
+		var cg := (er + 12.0) * 0.26
+		var cpz := 0.7 + 0.3 * sin(animt * 4.0)
+		var ccol := col.lightened(0.35)
+		draw_rect(Rect2(ep.x - cg - 2.0, ep.y - cg - 2.0, (cg + 2.0) * 2.0, (cg + 2.0) * 2.0), Color(Balance.COL_INK.r, Balance.COL_INK.g, Balance.COL_INK.b, 0.85))
+		draw_rect(Rect2(ep.x - cg, ep.y - cg, cg * 2.0, cg * 2.0), Color(ccol.r, ccol.g, ccol.b, 0.55 + 0.35 * cpz))
+		draw_rect(Rect2(ep.x - cg * 0.5, ep.y - cg * 0.5, cg, cg), Color(1, 1, 1, 0.7 * cpz))
 
 # ================================================================
 #  BENCHMARK (أداء) — أسوأ مشهد: الـ gauntlet بأربع بوسات + لودأوت قوي
