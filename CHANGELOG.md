@@ -1,5 +1,41 @@
 # Cube Survivor — Changelog
 
+## v1.2.6 (2026-07) — Blessing Cleanup, Power Pass & Character Fixes
+- **Base health regen for everyone** — every survivor now regenerates **1 HP/s
+  at all times** (during stages and boss fights, after being hit, while moving
+  — no "unhurt for X seconds" condition, no stage cap, no overheal). The game
+  is harder now, so everyone gets baseline sustain.
+- **Titan is a real tank** — regenerates **5 HP/s** always and gains more armor.
+  Tanky and forgiving up close, but still mortal (dies under real pressure).
+- **Recovery blessing removed** from the pool (its old "unhurt 6s" design was
+  weak/boring); the Recovery meta-shop upgrade now grants **+1 HP/s** instead.
+- **Lifesteal** (new, Epic) — heal 3% of weapon damage per rank (max 2), no
+  overheal, reduced vs bosses, with a small green heal spark.
+- **Removed** the weak/conditional **Close Call** and **Boss Breaker**.
+- **Reach → AoE Mastery** — now +18%/rank and also grows orb size/range.
+- **Gunpowder** — now +25% blast damage, +12% blast radius, and explosions can
+  ignite the ground.
+- **Kill Wave** — triggers every **20** kills (was 25), much stronger and with a
+  big double-ring shockwave + burst.
+- **Frost Orb reworked** — Lv2 bigger, **Lv3 a second orb**, **Lv4 periodic icy
+  burst**; bigger, brighter visuals per level.
+- **Frost Trail** now deals light cold damage in addition to the slow.
+- **New damage blessings** — **Double Strike** (chance to hit twice),
+  **Execution** (+45%/rank vs enemies under 25% HP), **Multicast** (Q has a
+  chance to cast a second time); **Giant Slayer → Elite Hunter** (+25%/rank).
+- **New elemental orbs** — **Fire Orb** (damage + burn, Lv3 second orb, Lv4
+  death blast) and **Lightning Orb** (zaps and chains, Lv4 brief stun), each
+  with clear per-level visual growth.
+- **Shinobi R → Shadow Rush** (5s): unlimited dashes with dash damage and +10%
+  damage; i-frames only while dashing. No healing.
+- **Knight reworked** — now **throws large piercing swords** as his basic attack
+  (twin blades still guard him up close); scales with damage/pierce/rate/size.
+  His R is **Giant Blade Storm** (5s): bigger, faster, stronger piercing swords.
+- **Pyromancer R → Burning Skulls** (7s): summons 3 flaming skull orbs that
+  shoot fire (100% basic damage) and apply burn; reduced vs bosses.
+- All ultimate/orb/weapon upgrades show visually (extra orbs, thicker/brighter
+  effects, sword projectiles, skull faces, damage sparks).
+
 ## v1.2.5 (2026-07) — Ultimate R for Every Character
 - **Every survivor now has an R Ultimate** — unlocks at **Level 7**, fixed
   **60s cooldown**, only fires during gameplay (never in pause/menus/level-up,
